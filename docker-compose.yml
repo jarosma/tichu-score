@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: tichu-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+  backend:
+    build:
+      context: tichu-backend
+      dockerfile: src/main/Docker/Dockerfile.jvm
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
