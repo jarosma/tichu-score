@@ -1,1 +1,12 @@
 /Users/marcojaros/Projects/Privat/tichu/tichu-backend/src/main/java/ch/jaros/GreetingResource.java
+/Users/marcojaros/Projects/Privat/tichu/tichu-backend/src/main/java/ch/jaros/entity/Game.java
+/Users/marcojaros/Projects/Privat/tichu/tichu-backend/src/main/java/ch/jaros/entity/GameDetails.java
+/Users/marcojaros/Projects/Privat/tichu/tichu-backend/src/main/java/ch/jaros/entity/GameWinner.java
+/Users/marcojaros/Projects/Privat/tichu/tichu-backend/src/main/java/ch/jaros/entity/Player.java
+/Users/marcojaros/Projects/Privat/tichu/tichu-backend/src/main/java/ch/jaros/entity/Team.java
+/Users/marcojaros/Projects/Privat/tichu/tichu-backend/src/main/java/ch/jaros/repository/GameRepository.java
+/Users/marcojaros/Projects/Privat/tichu/tichu-backend/src/main/java/ch/jaros/repository/PlayerRepository.java
+/Users/marcojaros/Projects/Privat/tichu/tichu-backend/src/main/java/ch/jaros/rest/GameResource.java
+/Users/marcojaros/Projects/Privat/tichu/tichu-backend/src/main/java/ch/jaros/rest/PlayerRequest.java
+/Users/marcojaros/Projects/Privat/tichu/tichu-backend/src/main/java/ch/jaros/rest/PlayerResource.java
+/Users/marcojaros/Projects/Privat/tichu/tichu-backend/src/main/java/ch/jaros/rest/StartGameRequest.java
