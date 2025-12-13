@@ -1,0 +1,23 @@
+{
+  "roundScores": [
+    {
+      "round": 9,
+      "team1": 50,
+      "team2": 50
+    }, {
+      "round": 1,
+      "team1": 10,
+      "team2": 90
+    },
+    {
+      "round": 2,
+      "team1": 180,
+      "team2": 20
+    },
+    {
+      "round": 3,
+      "team1": -5,
+      "team2": 105
+    }
+  ]
+}
