@@ -59,7 +59,7 @@ class TeamResourceTest {
         final Player player2 = Player.from("Mia");
 
         final Team team = Team.builder()
-                .id(UUID.randomUUID())
+                .id(Team.createId("TeamMarco"))
                 .name("TeamMarco")
                 .player1(player1)
                 .player2(player2)
@@ -200,19 +200,19 @@ class TeamResourceTest {
         return Stream.of(
                 List.of(
                         Team.builder()
-                                .id(UUID.randomUUID())
+                                .id(Team.createId("TeamMarco"))
                                 .name("TeamMarco")
                                 .player1(player1)
                                 .player2(player2)
                                 .build(),
                         Team.builder()
-                                .id(UUID.randomUUID())
+                                .id(Team.createId("TeamJana"))
                                 .name("TeamJana")
                                 .player1(player3)
                                 .player2(player4)
                                 .build()),
                 List.of(Team.builder()
-                        .id(UUID.randomUUID())
+                        .id(Team.createId("TeamMarco"))
                         .name("TeamMarco")
                         .player1(player1)
                         .player2(player2)
