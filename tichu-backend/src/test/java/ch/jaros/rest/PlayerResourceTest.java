@@ -1,5 +1,6 @@
 package ch.jaros.rest;
 
+import ch.jaros.BaseTest;
 import ch.jaros.entity.Player;
 import ch.jaros.repository.PlayerRepository;
 import io.quarkus.test.junit.QuarkusTest;
@@ -18,15 +19,15 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 @QuarkusTest
-class PlayerResourceTest {
+class PlayerResourceTest extends BaseTest {
 
     @Inject
     PlayerRepository playerRepository;
 
     @BeforeEach
     @Transactional
-    void clearDatabase() {
-        playerRepository.deleteAll();
+    void setup() {
+        cleanUp();
     }
 
     @ParameterizedTest

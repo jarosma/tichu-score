@@ -2,7 +2,7 @@ package ch.jaros.rest;
 
 
 import ch.jaros.entity.Game;
-import ch.jaros.entity.GameDetails;
+import ch.jaros.entity.Score;
 import ch.jaros.entity.Team;
 import ch.jaros.exception.TeamDoesNotExistException;
 import ch.jaros.exception.TeamsNotDistinctException;
@@ -66,7 +66,7 @@ public class GameResource {
                 .startedAt(now)
                 .team1(team1)
                 .team2(team2)
-                .gameDetails(GameDetails.builder().build())
+                .scores(new Score())
                 .build();
     }
 }

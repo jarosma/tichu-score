@@ -8,6 +8,9 @@ import java.util.UUID;
 
 @ApplicationScoped
 public class GameRepository implements PanacheRepositoryBase<Game, UUID> {
-
+    public Game findOngoingGameById(final UUID id) {
+        final Game game = findById(id);
+        return (game == null || game.getHasEnded())? null : game;
+    }
 }
 

@@ -1,5 +1,7 @@
 package ch.jaros.entity;
 
+import ch.jaros.exception.GameAlreadyEndedException;
+import ch.jaros.rest.EndGameRequest;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcType;
@@ -16,12 +18,11 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
+@ToString
 public class Game {
 
     @Id
-    @EqualsAndHashCode.Include
     private UUID id;
 
     @Column(name = "started_at", nullable = false)
@@ -38,12 +39,10 @@ public class Game {
     @JoinColumn(name = "team2_id")
     private Team team2;
 
+    @Builder.Default
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "game_details", nullable = false)
-    private GameDetails gameDetails;
-
-    @Column(nullable = false)
-    private int score;
+    @Column(name = "scores", nullable = false)
+    private Score scores = new Score();
 
     @Enumerated(EnumType.STRING)
     @JdbcType(PostgreSQLEnumJdbcType.class)
@@ -54,6 +53,16 @@ public class Game {
         String data = team1.toString() + "-" + team2.toString() + "-" + time.toString();
 
         return UUID.nameUUIDFromBytes(data.getBytes());
+    }
+
+    public void endGame(final EndGameRequest request) throws GameAlreadyEndedException {
+        if (getHasEnded()) throw new GameAlreadyEndedException();
+        setEndedAt(OffsetDateTime.now());
+        setWinner(request.winner());
+    }
+
+    public boolean getHasEnded() {
+        return getEndedAt() != null;
     }
 }
 

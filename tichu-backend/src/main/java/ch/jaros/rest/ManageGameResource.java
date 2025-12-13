@@ -2,7 +2,7 @@ package ch.jaros.rest;
 
 
 import ch.jaros.entity.Game;
-import ch.jaros.entity.GameDetails;
+import ch.jaros.entity.Score;
 import ch.jaros.entity.Team;
 import ch.jaros.exception.TeamDoesNotExistException;
 import ch.jaros.exception.TeamsNotDistinctException;
@@ -20,11 +20,11 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 
-@Path("game")
+@Path("games")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequiredArgsConstructor
-public class GameResource {
+public class ManageGameResource {
 
     private final TeamRepository teamRepository;
     private final GameRepository gameRepository;
@@ -45,7 +45,27 @@ public class GameResource {
 
         if (gameRepository.findById(game.getId()) != null) return Response.status(Response.Status.CONFLICT).build();
         gameRepository.persist(game);
+
         return Response.status(Response.Status.CREATED).entity(game).build();
+    }
+
+    @GET
+    @Path("spectate/{id}")
+    public Response spectateGame(@PathParam("id") UUID gameId) {
+        final Game game = gameRepository.findById(gameId);
+        if (game == null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(game).build();
+    }
+
+    @POST
+    @Path("end/{id}")
+    @Transactional
+    public Response endGame(@PathParam("id") UUID gameId, final EndGameRequest request) {
+        final Game game = gameRepository.findById(gameId);
+        if (game == null) return Response.status(Response.Status.NOT_FOUND).build();
+        if (game.getHasEnded()) return Response.ok(game).build();;
+        game.endGame(request);
+        return Response.ok(game).build();
     }
 
     private Game createNewGame(final StartGameRequest request) throws TeamDoesNotExistException, TeamsNotDistinctException {
@@ -64,16 +84,6 @@ public class GameResource {
                 .startedAt(now)
                 .team1(team1)
                 .team2(team2)
-                .gameDetails(GameDetails.builder().build())
                 .build();
     }
-
-    @GET
-    @Path("spectate/{id}")
-    public Response spectateGame(@PathParam("id") UUID gameId) {
-        final Game game = gameRepository.findById(gameId);
-        if (game == null) return Response.status(Response.Status.NOT_FOUND).build();
-        return Response.ok(game).build();
-    }
-
 }

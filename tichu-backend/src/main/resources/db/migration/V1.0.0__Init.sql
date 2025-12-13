@@ -27,8 +27,7 @@ CREATE TABLE game (
     team1_id UUID NOT NULL,
     team2_id UUID NOT NULL,
 
-    game_details JSONB NOT NULL,
-    score INT NOT NULL DEFAULT 0,
+    scores JSONB NOT NULL,
     winner game_winner,
 
     CONSTRAINT fk_game_team1 FOREIGN KEY (team1_id) REFERENCES team(id),

@@ -1,5 +1,6 @@
 package ch.jaros.rest;
 
+import ch.jaros.BaseTest;
 import ch.jaros.entity.Player;
 import ch.jaros.entity.Team;
 import ch.jaros.repository.PlayerRepository;
@@ -20,7 +21,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 @QuarkusTest
-class TeamResourceTest {
+class TeamResourceTest extends BaseTest {
 
     @Inject
     TeamRepository teamRepository;
@@ -29,11 +30,9 @@ class TeamResourceTest {
 
     @BeforeEach
     @Transactional
-    void clearDatabase() {
-        teamRepository.deleteAll();
-        playerRepository.deleteAll();
+    void setup() {
+        cleanUp();
     }
-
 
     @ParameterizedTest
     @MethodSource("getAllParameters")
@@ -181,7 +180,6 @@ class TeamResourceTest {
     void delete_notExisting() {
 
         given()
-                .contentType("application/json")
                 .when().delete(String.format("/teams/%s", "00000000-0000-0000-0000-000000000000"))
                 .then()
                 .statusCode(404);
