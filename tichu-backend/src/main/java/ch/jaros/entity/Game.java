@@ -1,9 +1,10 @@
 package ch.jaros.entity;
 
-import ch.jaros.rest.StartGameRequest;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
@@ -45,9 +46,9 @@ public class Game {
     private int score;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(columnDefinition = "game_winner")
     private GameWinner winner;
-
 
     public static UUID createId(final UUID team1, final UUID team2, final OffsetDateTime time) {
         String data = team1.toString() + "-" + team2.toString() + "-" + time.toString();

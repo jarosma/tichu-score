@@ -1,6 +1,6 @@
 package ch.jaros.entity;
 
-import ch.jaros.rest.PlayerRequest;
+import ch.jaros.rest.PlayerPostRequest;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,8 +25,11 @@ public class Player {
 
     private Integer elo;
 
-    public static Player from(final PlayerRequest playerRequest) {
-        final String name = playerRequest.name();
+    public static Player from(final PlayerPostRequest playerPostRequest) {
+        return from(playerPostRequest.name());
+    }
+
+    public static Player from(final String name) {
         return Player.builder()
                 .id(UUID.nameUUIDFromBytes(name.getBytes()))
                 .name(name)
