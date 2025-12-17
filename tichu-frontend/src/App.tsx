@@ -1,35 +1,33 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HomePage } from "@/pages/HomePage";
+import { NewGamePage } from "@/pages/NewGamePage";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { GamePage } from "@/pages/GamePage";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="flex items-center justify-between p-4 border-b">
+        <h1 className="font-semibold">Tichu</h1>
+        <ThemeToggle />
+      </header>
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <HomePage
+                onSpectate={() => console.log("Spectate")}
+                onStats={() => console.log("Stats")}
+              />
+            }
+          />
+          <Route path="/new-game" element={<NewGamePage />} />
+          <Route path="/game/:id" element={<GamePage />} />
+        </Routes>
+      </BrowserRouter>
+    </div>
+  );
 }
 
-export default App
+export default App;
