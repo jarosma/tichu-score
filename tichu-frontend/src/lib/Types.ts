@@ -29,8 +29,11 @@ export interface TeamCreateRequest {
   player2: UUID;
 }
 
-// export interface ScoreRound {
-// }
+export interface ScoreRound {
+  number: number;
+  team1: number;
+  team2: number;
+}
 
 export interface Scores {
   rounds: ScoreRound[];

@@ -17,9 +17,7 @@ export function HomePage({ onSpectate, onStats }: SplashScreenProps) {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-3xl font-bold">Tichu Score</CardTitle>
-          <p className="text-muted-foreground text-sm">
-            Made with {"<3"} by Marco
-          </p>
+          <p className="text-muted-foreground text-sm">by Marco</p>
         </CardHeader>
 
         <CardContent className="flex flex-col gap-4">

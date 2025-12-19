@@ -1,7 +1,7 @@
 // src/components/splash/select-player.tsx
 import { useState } from "react";
-import { createPlayer } from "@/lib/api/players";
-import type { Player } from "@/lib/tpye";
+import { createPlayer, fetchPlayers } from "@/lib/api/Players";
+import type { Player } from "@/lib/Types";
 import useSWR, { mutate } from "swr";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,7 @@ interface SelectPlayerProps {
 }
 
 export function SelectPlayer({ selectedPlayer, onSelect }: SelectPlayerProps) {
-  const { data: players = [] } = useSWR("/players", async () => {
-    const res = await fetch("http://localhost:8080/players");
-    if (!res.ok) throw new Error("Failed to fetch players");
-    return res.json();
-  });
+  const { data: players = [] } = useSWR<Player[]>("/players", fetchPlayers);
   const [newPlayerName, setNewPlayerName] = useState("");
 
   async function handleAddPlayer() {

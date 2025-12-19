@@ -1,5 +1,5 @@
 import useSWR from "swr";
-import type { Team, Player } from "@/lib/type";
+import type { Team, Player } from "@/lib/Types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
@@ -32,17 +32,18 @@ export function SelectTeam({
     <div>
       <Label>{title}</Label>
       <div className="grid grid-cols-1 gap-2 mt-1">
-        {teams.map((team) => (
-          isTeamDisabled(team) || (
-            <Button
-              key={team.id}
-              variant={selectedTeam?.id === team.id ? "default" : "outline"}
-              onClick={() => onSelect(team)}
-            >
-              {team.name}: {team.player1.name} & {team.player2.name}
-            </Button>
-            )
-        ))}
+        {teams.map(
+          (team) =>
+            isTeamDisabled(team) || (
+              <Button
+                key={team.id}
+                variant={selectedTeam?.id === team.id ? "default" : "outline"}
+                onClick={() => onSelect(team)}
+              >
+                {team.name}: {team.player1.name} & {team.player2.name}
+              </Button>
+            ),
+        )}
       </div>
     </div>
   );

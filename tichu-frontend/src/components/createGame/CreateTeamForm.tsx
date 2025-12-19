@@ -1,13 +1,13 @@
 import { useState } from "react";
-import type { Player } from "@/lib/type";
-import { createTeam } from "@/lib/api/teams";
-import { createPlayer } from "@/lib/api/players";
+import type { Player } from "@/lib/Types";
+import { createTeam } from "@/lib/api/Teams";
+import { createPlayer } from "@/lib/api/Players";
 import useSWR, { mutate } from "swr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Divider } from "@/components/ui/divider";
+import { Separator } from "@/components/ui/separator";
 
 interface CreateTeamFormProps {
   onClose: () => void;
@@ -75,7 +75,7 @@ export function CreateTeamForm({ onClose }: CreateTeamFormProps) {
         onChange={(e) => setTeamName(e.target.value)}
       />
 
-      <Divider />
+      <Separator />
 
       <Label>Spieler auswählen</Label>
       <div className="grid grid-cols-2 gap-2 mt-1">
@@ -105,21 +105,26 @@ export function CreateTeamForm({ onClose }: CreateTeamFormProps) {
       </div>
 
       {creatingPlayer && (
-        <div className="flex gap-2 mt-2">
-          <Divider />
-          <Input
-            placeholder="Name des neuen Spielers"
-            value={newPlayerName}
-            onChange={(e) => setNewPlayerName(e.target.value)}
-          />
-          <Button onClick={handleCreatePlayer}>Erstellen</Button>
-          <Button variant="secondary" onClick={() => setCreatingPlayer(false)}>
-            Abbrechen
-          </Button>
-        </div>
+        <>
+          <Separator />
+          <div className="flex gap-2 mt-2">
+            <Input
+              placeholder="Name des neuen Spielers"
+              value={newPlayerName}
+              onChange={(e) => setNewPlayerName(e.target.value)}
+            />
+            <Button onClick={handleCreatePlayer}>Erstellen</Button>
+            <Button
+              variant="secondary"
+              onClick={() => setCreatingPlayer(false)}
+            >
+              Abbrechen
+            </Button>
+          </div>
+        </>
       )}
 
-      <Divider />
+      <Separator />
 
       <p className="mt-2">
         Spieler 1: {player1?.name || "–"} | Spieler 2: {player2?.name || "–"}

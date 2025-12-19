@@ -1,13 +1,13 @@
 import { useState } from "react";
-import type { Team } from "@/lib/type";
-import { startGame } from "@/lib/api/games";
+import type { Team } from "@/lib/Types";
+import { startGame } from "@/lib/api/Games";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { SelectTeam } from "@/components/newGame/SelectTeam";
-import { CreateTeamForm } from "@/components/newGame/CreateTeamForm";
+import { SelectTeam } from "@/components/createGame/SelectTeam";
+import { CreateTeamForm } from "@/components/createGame/CreateTeamForm";
 import { useNavigate } from "react-router-dom";
 
-export function NewGamePage() {
+export function CreateGamePage() {
   const [team1, setTeam1] = useState<Team | null>(null);
   const [team2, setTeam2] = useState<Team | null>(null);
   const [creatingTeam, setCreatingTeam] = useState(false);
@@ -33,9 +33,9 @@ export function NewGamePage() {
       const data = await startGame(team1.id, team2.id);
       console.log(data);
       const gameId = data.id;
-      navigate(`/game/${gameId}`);
+      navigate(`/spectate/${gameId}`, { state: { newGame: data } });
     } catch (e) {
-      console.error(e);
+      console.log(e);
       alert("Fehler beim Starten des Spiels");
     }
   }
