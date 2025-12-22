@@ -4,10 +4,11 @@ services:
       context: tichu-frontend
       dockerfile: Dockerfile
       args:
-        HOST_IP: $HOST_IP
-        HOST_PORT: 80
+        TICHU_HOST_URL: $TICHU_HOST_URL
+        TICHU_BACKEND_PORT: 8080
+        TICHU_HOST_PORT: 81
     ports:
-      - "80:80"
+      - "81:80"
     restart: unless-stopped
 
   backend:

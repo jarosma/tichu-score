@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Player } from "@/lib/Types";
 import { createTeam } from "@/lib/api/Teams";
-import { createPlayer } from "@/lib/api/Players";
+import { createPlayer, fetchPlayers } from "@/lib/api/Players";
 import useSWR, { mutate } from "swr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,11 +20,7 @@ export function CreateTeamForm({ onClose }: CreateTeamFormProps) {
   const [creatingPlayer, setCreatingPlayer] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
 
-  const { data: players = [] } = useSWR<Player[]>("/players", async () => {
-    const res = await fetch("http://localhost:8080/players");
-    if (!res.ok) throw new Error("Failed to fetch players");
-    return res.json();
-  });
+  const { data: players = [] } = useSWR<Player[]>("/players", fetchPlayers);
 
   async function handleCreateTeam() {
     if (!teamName || !player1 || !player2) {

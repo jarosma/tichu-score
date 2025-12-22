@@ -23,10 +23,10 @@ export function SpectateGame({ newGame }: SpectateGameProps) {
 
   const game = newGame || fetchedGame;
 
-  const hostIp = import.meta.env.VITE_HOST_IP;
+  const hostUrl = import.meta.env.VITE_HOST_URL;
   const hostPort = import.meta.env.VITE_HOST_PORT;
 
-  const submitScoreUrl = `http://${hostIp}:${hostPort}/score/${game?.id}`;
+  const submitScoreUrl = `${hostUrl}:${hostPort}/score/${game?.id}`;
 
   useEffect(() => {
     if (!game || game!.hasEnded || !endGameAt1000) return;

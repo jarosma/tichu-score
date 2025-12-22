@@ -2,6 +2,8 @@ import useSWR from "swr";
 import type { Team, Player } from "@/lib/Types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { fetchTeams } from "@/lib/api/Teams";
+
 
 interface SelectTeamProps {
   selectedTeam: Team | null;
@@ -16,11 +18,7 @@ export function SelectTeam({
   occupiedPlayers = [],
   title,
 }: SelectTeamProps) {
-  const { data: teams = [] } = useSWR<Team[]>("/teams", async () => {
-    const res = await fetch("http://localhost:8080/teams");
-    if (!res.ok) throw new Error("Failed to fetch teams");
-    return res.json();
-  });
+  const { data: teams = [] } = useSWR<Team[]>("/teams", fetchTeams);
 
   function isTeamDisabled(team: Team) {
     return occupiedPlayers.some(

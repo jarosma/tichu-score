@@ -1,7 +1,8 @@
 import type { Game } from "../Types";
 
-const hostIp = import.meta.env.VITE_HOST_IP;
-const BASE_URL = "http://" + hostIp + ":8080";
+const hostUrl = import.meta.env.VITE_HOST_URL;
+const backendPort = import.meta.env.VITE_BACKEND_PORT;
+const BASE_URL = hostUrl + ":" + backendPort;
 
 export async function startGame(
   team1Id: string,
