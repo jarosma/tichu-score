@@ -113,7 +113,7 @@ export function SubmitScore() {
 
       <Button
         className="w-full h-14 text-lg"
-        disabled={team1Base == 0 && team1Base == 0}
+        disabled={team1Base == 0 && team2Base == 0}
         onClick={handleSubmit}
       >
         Runde speichern
