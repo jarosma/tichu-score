@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { Game } from "@/lib/Types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -17,6 +18,18 @@ export function GameScore({ game }: GamePageProps) {
   const roundScores = game.scores?.rounds || [];
   const totalTeam1 = roundScores.reduce((sum, entry) => sum + entry.team1, 0);
   const totalTeam2 = roundScores.reduce((sum, entry) => sum + entry.team2, 0);
+
+  // 👇 reference to scroll container
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [roundScores]);
 
   return (
     <Card className="w-full max-w-3xl shadow-lg">
@@ -47,7 +60,10 @@ export function GameScore({ game }: GamePageProps) {
           </Table>
 
           {/* Scrollable middle rows */}
-          <div className="overflow-y-auto max-h-64">
+          <div
+            ref={scrollRef}
+            className="overflow-y-auto max-h-64"
+          >
             <Table className="table-fixed w-full border-t border-spacing-0">
               <TableBody>
                 {roundScores.map((s) => (
