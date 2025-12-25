@@ -67,10 +67,13 @@ export function SpectateGame({ newGame }: SpectateGameProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start p-6 bg-background space-y-4">
-      <GameScore game={game} />
+    <div className="flex flex-col items-center justify-start p-6 bg-background space-y-4">
+      <div className="flex-1 w-full max-w-3xl flex flex-col overflow-hidden">
+        <GameScore game={game} />
+      </div>
 
       <GameQrDialog submitScoreUrl={submitScoreUrl} />
+
       {!endGameAt1000 && !game!.hasEnded && (
         <Button variant="destructive" onClick={endGameManually}>
           Spiel beenden

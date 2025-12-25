@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { fetchTeams } from "@/lib/api/Teams";
 
-
 interface SelectTeamProps {
   selectedTeam: Team | null;
   onSelect: (team: Team) => void;

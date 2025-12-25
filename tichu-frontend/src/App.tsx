@@ -13,7 +13,7 @@ function App() {
         <ThemeToggle />
       </header>
 
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden">
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<HomePage />} />

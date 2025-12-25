@@ -23,41 +23,55 @@ export function GameScore({ game }: GamePageProps) {
       <CardHeader>
         <CardTitle>Scores</CardTitle>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-2xl">Runde</TableHead>
-              <TableHead className="text-2xl">
-                {game.team1.name}{" "}
-                <a className="text-sm">
-                  ({game.team1.player1.name} + {game.team1.player2.name})
-                </a>
-              </TableHead>
-              <TableHead className="text-2xl">
-                {game.team2.name}{" "}
-                <a className="text-sm">
-                  ({game.team2.player1.name} + {game.team2.player2.name})
-                </a>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {roundScores.map((s) => (
-              <TableRow key={s.number}>
-                <TableCell className="text-xl">{s.number + 1}</TableCell>
-                <TableCell className="text-xl">{s.team1}</TableCell>
-                <TableCell className="text-xl">{s.team2}</TableCell>
+      <CardContent className="p-0">
+        <div className="w-full flex flex-col m-4">
+          {/* Table Header */}
+          <Table className="table-fixed w-full border-t border-spacing-0">
+            <TableHeader className="sticky top-0 z-10">
+              <TableRow>
+                <TableHead className="text-2xl">Runde</TableHead>
+                <TableHead className="text-2xl">
+                  {game.team1.name}{" "}
+                  <a className="text-sm">
+                    ({game.team1.player1.name} + {game.team1.player2.name})
+                  </a>
+                </TableHead>
+                <TableHead className="text-2xl">
+                  {game.team2.name}{" "}
+                  <a className="text-sm">
+                    ({game.team2.player1.name} + {game.team2.player2.name})
+                  </a>
+                </TableHead>
               </TableRow>
-            ))}
-            {/* Gesamtscore */}
-            <TableRow className="font-bold border-t">
-              <TableCell className="text-3xl">Gesamt</TableCell>
-              <TableCell className="text-3xl">{totalTeam1}</TableCell>
-              <TableCell className="text-3xl">{totalTeam2}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+            </TableHeader>
+          </Table>
+
+          {/* Scrollable middle rows */}
+          <div className="overflow-y-auto max-h-64">
+            <Table className="table-fixed w-full border-t border-spacing-0">
+              <TableBody>
+                {roundScores.map((s) => (
+                  <TableRow key={s.number}>
+                    <TableCell className="text-xl">{s.number + 1}</TableCell>
+                    <TableCell className="text-xl">{s.team1}</TableCell>
+                    <TableCell className="text-xl">{s.team2}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Sticky bottom row */}
+          <Table className="table-fixed w-full border-t border-spacing-0">
+            <TableBody>
+              <TableRow className="font-bold border-t sticky bottom-0 z-10">
+                <TableCell className="text-3xl">Gesamt</TableCell>
+                <TableCell className="text-3xl">{totalTeam1}</TableCell>
+                <TableCell className="text-3xl">{totalTeam2}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
