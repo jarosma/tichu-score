@@ -40,6 +40,16 @@ export function TichuNumpad({
     }
   }
 
+  function onNegative() {
+     if (activeTeam == "team1") {
+        setTeam1Base(0 - team1Base);
+        updateOther(0 - team1Base)
+      } else {
+        setTeam2Base(0 - team2Base);
+        updateOther(0 - team2Base)
+      }
+  }
+
   function updateOther(score: number) {
     if (activeTeam == "team1") {
       setTeam2Base(100 - score);
@@ -86,7 +96,13 @@ export function TichuNumpad({
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        <div />
+        <Button
+          variant="outline"
+          className="h-14"
+          onClick={() => onNegative()}
+        >
+          -
+        </Button>
         <Button
           variant="outline"
           className="h-14"
