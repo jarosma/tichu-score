@@ -1,0 +1,1 @@
+ALTER TABLE player ADD enabled boolean DEFAULT true;

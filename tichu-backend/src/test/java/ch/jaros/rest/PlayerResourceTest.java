@@ -7,6 +7,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -105,6 +106,77 @@ class PlayerResourceTest extends BaseTest {
                 .then()
                 .statusCode(409);
 
+    }
+
+    @Test
+    void disable() {
+        final Player player = Player.from("Marco");
+        player.setEnabled(true);
+
+        transactionalPersist(player);
+
+        given()
+                .contentType("application/json")
+                .when().post(String.format("/players/disable/%s", player.getId()))
+                .then()
+                .statusCode(200);
+
+        final Player finalPlayer = playerRepository.findById(player.getId());
+        Assertions.assertFalse(finalPlayer.isEnabled());
+
+    }
+
+    @Test
+    void enable() {
+        final Player player = Player.from("Marco");
+        player.setEnabled(false);
+
+        transactionalPersist(player);
+
+        given()
+                .contentType("application/json")
+                .when().post(String.format("/players/enable/%s", player.getId()))
+                .then()
+                .statusCode(200);
+
+        final Player finalPlayer = playerRepository.findById(player.getId());
+        Assertions.assertTrue(finalPlayer.isEnabled());
+    }
+
+
+    @Test
+    void disable_alreadyDisabled() {
+        final Player player = Player.from("Marco");
+        player.setEnabled(false);
+
+        transactionalPersist(player);
+
+        given()
+                .contentType("application/json")
+                .when().post(String.format("/players/disable/%s", player.getId()))
+                .then()
+                .statusCode(200);
+
+        final Player finalPlayer = playerRepository.findById(player.getId());
+        Assertions.assertFalse(finalPlayer.isEnabled());
+
+    }
+
+    @Test
+    void enable_alreadyEnabled() {
+        final Player player = Player.from("Marco");
+        player.setEnabled(true);
+
+        transactionalPersist(player);
+
+        given()
+                .contentType("application/json")
+                .when().post(String.format("/players/enable/%s", player.getId()))
+                .then()
+                .statusCode(200);
+
+        final Player finalPlayer = playerRepository.findById(player.getId());
+        Assertions.assertTrue(finalPlayer.isEnabled());
     }
 
     @Test

@@ -6,6 +6,7 @@ import ch.jaros.entity.Score;
 import ch.jaros.entity.Team;
 import ch.jaros.exception.TeamDoesNotExistException;
 import ch.jaros.exception.TeamsNotDistinctException;
+import ch.jaros.exception.TeamsNotEnabledException;
 import ch.jaros.repository.GameRepository;
 import ch.jaros.repository.TeamRepository;
 import jakarta.transaction.Transactional;
@@ -41,16 +42,19 @@ public class GameResource {
             game = createNewGame(request);
         } catch (final TeamDoesNotExistException e) {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
-        } catch (final TeamsNotDistinctException e) {
+        } catch (final TeamsNotDistinctException | TeamsNotEnabledException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
 
         if (gameRepository.findById(game.getId()) != null) return Response.status(Response.Status.CONFLICT).build();
         gameRepository.persist(game);
+
+        System.out.println(game);
         return Response.status(Response.Status.CREATED).entity(game).build();
     }
 
-    private Game createNewGame(final StartGameRequest request) throws TeamDoesNotExistException, TeamsNotDistinctException {
+    private Game createNewGame(final StartGameRequest request) throws TeamDoesNotExistException,
+            TeamsNotDistinctException, TeamsNotEnabledException {
         final OffsetDateTime now = OffsetDateTime.now();
 
         final Team team1 = teamRepository.findById(request.team1());
@@ -59,7 +63,8 @@ public class GameResource {
         final Team team2 = teamRepository.findById(request.team2());
         if (team2 == null) throw new TeamDoesNotExistException("Team 2 does not exist");
 
-        if (team2 == team1) throw new TeamsNotDistinctException();
+        if (team2 == team1 || !team1.distinctTo(team2)) throw new TeamsNotDistinctException();
+        if (!team2.isEnabled() || !team1.isEnabled()) throw new TeamsNotEnabledException();
 
         return Game.builder()
                 .id(Game.createId(request.team1(), request.team2(), now))

@@ -43,6 +43,28 @@ public class PlayerResource {
         return Response.status(Response.Status.CREATED).entity(player).build();
     }
 
+    @POST
+    @Path("/enable/{id}")
+    @Transactional
+    public Response enable(@PathParam("id") UUID id) {
+       final Player player = playerRepository.findById(id);
+       if (player == null) return Response.status(Response.Status.NOT_FOUND).build();
+       player.setEnabled(true);
+       playerRepository.update(player);
+       return Response.ok().build();
+    }
+
+    @POST
+    @Path("/disable/{id}")
+    @Transactional
+    public Response disable(@PathParam("id") UUID id) {
+        final Player player = playerRepository.findById(id);
+        if (player == null) return Response.status(Response.Status.NOT_FOUND).build();
+        player.setEnabled(false);
+        playerRepository.update(player);
+        return Response.ok().build();
+    }
+
     @DELETE
     @Path("/{id}")
     @Transactional

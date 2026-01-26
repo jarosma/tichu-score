@@ -25,6 +25,8 @@ public class Player {
 
     private Integer elo;
 
+    private boolean enabled;
+
     public static Player from(final PlayerPostRequest playerPostRequest) {
         return from(playerPostRequest.name());
     }
@@ -33,6 +35,7 @@ public class Player {
         return Player.builder()
                 .id(UUID.nameUUIDFromBytes(name.getBytes()))
                 .name(name)
+                .enabled(true)
                 .build();
     }
 

@@ -72,7 +72,47 @@ class TeamResourceTest extends BaseTest {
                 .statusCode(200)
                 .body("name", is("TeamMarco"))
                 .body("player1.name", is("Marco"))
-                .body("player2.name", is("Mia"));
+                .body("player2.name", is("Mia"))
+                .body("enabled", is(true));
+    }
+
+    @Test
+    void disabledTeams() {
+        final Player player1 = Player.from("Marco");
+        player1.setEnabled(false);
+        final Player player2 = Player.from("Mia");
+        final Player player3 = Player.from("Jana");
+
+        final Team team1 = Team.builder()
+                .id(Team.createId("TeamMaMi"))
+                .name("TeamMaMi")
+                .player1(player1)
+                .player2(player2)
+                .build();
+
+        final Team team2 = Team.builder()
+                .id(Team.createId("TeamMiJa"))
+                .name("TeamMiJa")
+                .player1(player2)
+                .player2(player3)
+                .build();
+
+        transactionalPersist(team1);
+        transactionalPersist(player3);
+        transactionalPersistNonCascade(team2);
+
+
+        given()
+                .when().get(String.format("/teams/%s", team1.getId()))
+                .then()
+                .statusCode(200)
+                .body("enabled", is(false));
+
+        given()
+                .when().get(String.format("/teams/%s", team2.getId()))
+                .then()
+                .statusCode(200)
+                .body("enabled", is(true));
     }
 
     @Test
@@ -230,5 +270,10 @@ class TeamResourceTest extends BaseTest {
     @Transactional
     void transactionalPersist(final Player player) {
         playerRepository.persist(player);
+    }
+
+    @Transactional
+    void transactionalPersistNonCascade(final Team team) {
+        teamRepository.persist(team);
     }
 }

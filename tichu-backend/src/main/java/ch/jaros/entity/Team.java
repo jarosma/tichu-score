@@ -37,5 +37,17 @@ public class Team {
     public static UUID createId(final String name) {
         return UUID.nameUUIDFromBytes(name.getBytes());
     }
+
+    public boolean isEnabled() {
+        return player1.isEnabled() && player2.isEnabled();
+    }
+
+    public boolean distinctTo(final Team team) {
+        return this.player1 != team.player1
+                && this.player1 != team.player2
+                && this.player2 != team.player1
+                && this.player2 != team.player2;
+    }
+
 }
 
