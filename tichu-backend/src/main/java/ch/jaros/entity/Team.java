@@ -1,6 +1,7 @@
 package ch.jaros.entity;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import java.util.UUID;
@@ -18,8 +19,6 @@ public class Team {
 
     @Id
     @EqualsAndHashCode.Include
-    @OneToOne
-    @JoinColumn(name = "team_stats")
     private UUID id;
 
     @Column(length = 64)
@@ -36,7 +35,12 @@ public class Team {
     @Column(name = "team_elo")
     private Integer teamElo;
 
-    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean enabled = true;
+
+    @OneToOne(mappedBy = "team", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private TeamStats teamStats;
 
     public static UUID createId(final String name) {
@@ -44,7 +48,8 @@ public class Team {
     }
 
     public boolean isEnabled() {
-        return player1.isEnabled() && player2.isEnabled();
+        return enabled && player1 != null && player2 != null
+                && player1.isEnabled() && player2.isEnabled();
     }
 
     public boolean distinctTo(final Team team) {
@@ -55,4 +60,3 @@ public class Team {
     }
 
 }
-

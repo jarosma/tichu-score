@@ -1,6 +1,7 @@
 package ch.jaros.rest;
 
 import ch.jaros.entity.Player;
+import ch.jaros.repository.TeamRepository;
 import ch.jaros.repository.PlayerRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -20,6 +21,7 @@ import java.util.UUID;
 public class PlayerResource {
 
     private final PlayerRepository playerRepository;
+    private final TeamRepository teamRepository;
 
     @GET
     public List<Player> getAll() {
@@ -27,9 +29,10 @@ public class PlayerResource {
     }
 
     @GET
-    @Path("/{id}")
-    public Response getById(@PathParam("id") UUID id) {
-        final Player player = playerRepository.findById(id);
+    @Path("/{playerId}")
+    public Response getById(@PathParam("playerId") String playerIdValue) {
+        final UUID playerId = PathUuid.parse(playerIdValue);
+        final Player player = playerRepository.findById(playerId);
         if (player == null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(player).build();
     }
@@ -43,33 +46,30 @@ public class PlayerResource {
         return Response.status(Response.Status.CREATED).entity(player).build();
     }
 
-    @POST
-    @Path("/enable/{id}")
+    @PATCH
+    @Path("/{playerId}")
     @Transactional
-    public Response enable(@PathParam("id") UUID id) {
-       final Player player = playerRepository.findById(id);
+    public Response updateStatus(@PathParam("playerId") String playerIdValue,
+                                 @NotNull @Valid final PlayerStatusRequest request) {
+       final UUID playerId = PathUuid.parse(playerIdValue);
+       final Player player = playerRepository.findById(playerId);
        if (player == null) return Response.status(Response.Status.NOT_FOUND).build();
-       player.setEnabled(true);
+       if (!request.enabled() && teamRepository.hasEnabledTeamForPlayer(playerId)) {
+           return Response.status(Response.Status.CONFLICT).build();
+       }
+       player.setEnabled(request.enabled());
        playerRepository.update(player);
        return Response.ok().build();
     }
 
-    @POST
-    @Path("/disable/{id}")
-    @Transactional
-    public Response disable(@PathParam("id") UUID id) {
-        final Player player = playerRepository.findById(id);
-        if (player == null) return Response.status(Response.Status.NOT_FOUND).build();
-        player.setEnabled(false);
-        playerRepository.update(player);
-        return Response.ok().build();
-    }
-
     @DELETE
-    @Path("/{id}")
+    @Path("/{playerId}")
     @Transactional
-    public Response delete(@PathParam("id") UUID id) {
-        boolean deleted = playerRepository.deleteById(id);
+    public Response delete(@PathParam("playerId") String playerIdValue) {
+        final UUID playerId = PathUuid.parse(playerIdValue);
+        if (playerRepository.findById(playerId) == null) return Response.status(Response.Status.NOT_FOUND).build();
+        if (teamRepository.hasTeamForPlayer(playerId)) return Response.status(Response.Status.CONFLICT).build();
+        boolean deleted = playerRepository.deleteById(playerId);
         if (!deleted) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.noContent().build();
     }

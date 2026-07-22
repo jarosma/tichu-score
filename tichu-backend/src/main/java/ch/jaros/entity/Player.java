@@ -2,6 +2,7 @@ package ch.jaros.entity;
 
 import ch.jaros.rest.PlayerPostRequest;
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import java.util.UUID;
@@ -28,6 +29,7 @@ public class Player {
     private boolean enabled;
 
     @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private PlayerStats playerStats;
 
     public static Player from(final PlayerPostRequest playerPostRequest) {
@@ -43,4 +45,3 @@ public class Player {
     }
 
 }
-

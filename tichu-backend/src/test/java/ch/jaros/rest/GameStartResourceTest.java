@@ -2,9 +2,11 @@ package ch.jaros.rest;
 
 import ch.jaros.BaseTest;
 import ch.jaros.entity.GameWinner;
+import ch.jaros.entity.Game;
 import ch.jaros.entity.Player;
 import ch.jaros.entity.Team;
 import ch.jaros.repository.PlayerRepository;
+import ch.jaros.repository.GameRepository;
 import ch.jaros.repository.TeamRepository;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -20,10 +22,12 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
-class GameResourceTest extends BaseTest {
+class GameStartResourceTest extends BaseTest {
 
     @Inject
     TeamRepository teamRepository;
+    @Inject
+    GameRepository gameRepository;
     @Inject
     PlayerRepository playerRepository;
 
@@ -63,21 +67,64 @@ class GameResourceTest extends BaseTest {
 
         final StartGameRequest startGameRequest = new StartGameRequest(team1.getId(), team2.getId());
 
-        given()
+        final String gameId = given()
                 .contentType("application/json")
                 .body(startGameRequest)
-                .when().post("/game/start")
+                .when().post("/games")
                 .then()
                 .statusCode(201)
                 .body("id", notNullValue(UUID.class))
                 .body("startedAt", notNullValue(OffsetDateTime.class))
                 .body("endedAt", nullValue(OffsetDateTime.class))
-                .body("team1", notNullValue(Team.class))
-                .body("team2", notNullValue(Team.class))
+                .body("team1.id", is(team1.getId().toString()))
+                .body("team1.name", is("TeamMaMi"))
+                .body("team1.player1.name", is("Marco"))
+                .body("team1.player2.name", is("Mia"))
+                .body("team2.id", is(team2.getId().toString()))
+                .body("team2.name", is("TeamJaMa"))
+                .body("team2.player1.name", is("Jana"))
+                .body("team2.player2.name", is("Martin"))
                 .body("winner", nullValue(GameWinner.class))
                 .body("scores.rounds", empty())
-                .body("hasEnded", is(false));
+                .body("hasEnded", is(false))
+                .extract().path("id");
 
+        final Game persisted = gameRepository.findById(UUID.fromString(gameId));
+        assertNotNull(persisted);
+        assertEquals(team1.getId(), persisted.getTeam1().getId());
+        assertEquals(team2.getId(), persisted.getTeam2().getId());
+        assertNotNull(persisted.getStartedAt());
+        assertNull(persisted.getEndedAt());
+        assertNull(persisted.getWinner());
+        assertTrue(persisted.getScores().getRounds().isEmpty());
+
+    }
+
+    @Test
+    void startGame_missingTeam1Id() {
+        given().contentType("application/json")
+                .body("{\"team2Id\":\"00000000-0000-0000-0000-000000000000\"}")
+                .when().post("/games").then().statusCode(400);
+
+        assertEquals(0, gameRepository.count());
+    }
+
+    @Test
+    void startGame_missingTeam2Id() {
+        given().contentType("application/json")
+                .body("{\"team1Id\":\"00000000-0000-0000-0000-000000000000\"}")
+                .when().post("/games").then().statusCode(400);
+
+        assertEquals(0, gameRepository.count());
+    }
+
+    @Test
+    void startGame_invalidTeamId() {
+        given().contentType("application/json")
+                .body("{\"team1Id\":\"invalidUUID\",\"team2Id\":\"00000000-0000-0000-0000-000000000000\"}")
+                .when().post("/games").then().statusCode(400);
+
+        assertEquals(0, gameRepository.count());
     }
 
     @Test
@@ -112,9 +159,11 @@ class GameResourceTest extends BaseTest {
         given()
                 .contentType("application/json")
                 .body(startGameRequest)
-                .when().post("/game/start")
+                .when().post("/games")
                 .then()
                 .statusCode(400);
+
+        assertEquals(0, gameRepository.count());
     }
 
     @Test
@@ -136,9 +185,11 @@ class GameResourceTest extends BaseTest {
         given()
                 .contentType("application/json")
                 .body(startGameRequest)
-                .when().post("/game/start")
+                .when().post("/games")
                 .then()
                 .statusCode(400);
+
+        assertEquals(0, gameRepository.count());
     }
 
     @Test
@@ -160,9 +211,11 @@ class GameResourceTest extends BaseTest {
         given()
                 .contentType("application/json")
                 .body(startGameRequest)
-                .when().post("/game/start")
+                .when().post("/games")
                 .then()
                 .statusCode(404);
+
+        assertEquals(0, gameRepository.count());
     }
 
     @Test
@@ -198,9 +251,11 @@ class GameResourceTest extends BaseTest {
         given()
                 .contentType("application/json")
                 .body(startGameRequest)
-                .when().post("/game/start")
+                .when().post("/games")
                 .then()
                 .statusCode(400);
+
+        assertEquals(0, gameRepository.count());
     }
 
     @Transactional

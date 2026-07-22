@@ -6,5 +6,5 @@ import lombok.Builder;
 import java.util.UUID;
 
 @Builder
-public record StartGameRequest(@NotNull UUID team1, @NotNull UUID team2) {
+public record StartGameRequest(@NotNull UUID team1Id, @NotNull UUID team2Id) {
 }

@@ -1,6 +1,7 @@
 package ch.jaros.rest;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
-public record PlayerPostRequest(@NotNull String name) {
+public record PlayerPostRequest(@NotBlank @Size(max = 64) String name) {
 }

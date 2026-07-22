@@ -1,8 +1,12 @@
 package ch.jaros.rest;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
-public record TeamCreateRequest(@NotNull String name, @NotNull UUID player1, @NotNull UUID player2) {
+public record TeamCreateRequest(@NotBlank @Size(max = 64) String name,
+                                @NotNull UUID player1Id,
+                                @NotNull UUID player2Id) {
 }

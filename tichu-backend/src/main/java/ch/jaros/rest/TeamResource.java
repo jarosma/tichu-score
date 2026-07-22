@@ -5,6 +5,7 @@ import ch.jaros.entity.Team;
 import ch.jaros.exception.PlayerDoesNotExistException;
 import ch.jaros.exception.PlayersNotDistinctException;
 import ch.jaros.repository.PlayerRepository;
+import ch.jaros.repository.GameRepository;
 import ch.jaros.repository.TeamRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -24,7 +25,26 @@ import java.util.UUID;
 public class TeamResource {
 
     private final PlayerRepository playerRepository;
+    private final GameRepository gameRepository;
     private final TeamRepository teamRepository;
+
+    @PATCH
+    @Path("/{teamId}")
+    @Transactional
+    public Response updateStatus(@PathParam("teamId") final String teamIdValue,
+                                 @NotNull @Valid final TeamStatusRequest request) {
+        final UUID teamId = PathUuid.parse(teamIdValue);
+        final Team team = teamRepository.findById(teamId);
+        if (team == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+        if (request.enabled() && (team.getPlayer1() == null || team.getPlayer2() == null
+                || !team.getPlayer1().isEnabled() || !team.getPlayer2().isEnabled())) {
+            return Response.status(Response.Status.CONFLICT).build();
+        }
+
+        team.setEnabled(request.enabled());
+        return Response.ok().build();
+    }
 
     @GET
     public List<Team> getAll() {
@@ -32,9 +52,10 @@ public class TeamResource {
     }
 
     @GET
-    @Path("/{id}")
-    public Response getById(@PathParam("id") UUID id) {
-        final Team team = teamRepository.findById(id);
+    @Path("/{teamId}")
+    public Response getById(@PathParam("teamId") String teamIdValue) {
+        final UUID teamId = PathUuid.parse(teamIdValue);
+        final Team team = teamRepository.findById(teamId);
         if (team == null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(team).build();
     }
@@ -57,20 +78,23 @@ public class TeamResource {
     }
 
     @DELETE
-    @Path("/{id}")
+    @Path("/{teamId}")
     @Transactional
-    public Response delete(@PathParam("id") UUID id) {
-        boolean deleted = teamRepository.deleteById(id);
+    public Response delete(@PathParam("teamId") String teamIdValue) {
+        final UUID teamId = PathUuid.parse(teamIdValue);
+        if (teamRepository.findById(teamId) == null) return Response.status(Response.Status.NOT_FOUND).build();
+        if (gameRepository.hasGameForTeam(teamId)) return Response.status(Response.Status.CONFLICT).build();
+        boolean deleted = teamRepository.deleteById(teamId);
         if (!deleted) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.noContent().build();
     }
 
     Team createNewTeam(final TeamCreateRequest request) throws PlayerDoesNotExistException, PlayersNotDistinctException {
 
-        final Player player1 = playerRepository.findById(request.player1());
+        final Player player1 = playerRepository.findById(request.player1Id());
         if (player1 == null) throw new PlayerDoesNotExistException("Player 1 does not exist");
 
-        final Player player2 = playerRepository.findById(request.player2());
+        final Player player2 = playerRepository.findById(request.player2Id());
         if (player2 == null) throw new PlayerDoesNotExistException("Player 2 does not exist");
 
         if (player1 == player2) throw new PlayersNotDistinctException();

@@ -13,13 +13,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
-class PlayResourceTest extends BaseTest {
+class ScoreSubmitResourceTest extends BaseTest {
 
     @Inject
     TeamRepository teamRepository;
@@ -69,16 +70,19 @@ class PlayResourceTest extends BaseTest {
         given()
                 .contentType("application/json")
                 .body(request)
-                .when().post(String.format("/play/%s/score", game.getId()))
+                .when().post(String.format("/games/%s/round-results", game.getId()))
                 .then()
                 .statusCode(200);
 
         final Game gameAfter = gameRepository.findById(game.getId());
 
-        Assertions.assertNotNull(gameAfter.getScores().getRounds().getFirst().getSubmittedAt());
-        Assertions.assertEquals(0, gameAfter.getScores().getRounds().getFirst().getNumber());
-        Assertions.assertEquals(10, gameAfter.getScores().getRounds().getFirst().getTeam1());
-        Assertions.assertEquals(90, gameAfter.getScores().getRounds().getFirst().getTeam2());
+        final var rounds = gameAfter.getScores().getRounds();
+
+        Assertions.assertEquals(1, rounds.size());
+        Assertions.assertNotNull(rounds.getFirst().getSubmittedAt());
+        Assertions.assertEquals(0, rounds.getFirst().getNumber());
+        Assertions.assertEquals(10, rounds.getFirst().getTeam1());
+        Assertions.assertEquals(90, rounds.getFirst().getTeam2());
     }
 
     @Test
@@ -90,34 +94,43 @@ class PlayResourceTest extends BaseTest {
         given()
                 .contentType("application/json")
                 .body(request)
-                .when().post(String.format("/play/%s/score", game.getId()))
+                .when().post(String.format("/games/%s/round-results", game.getId()))
                 .then()
                 .statusCode(200);
 
         given()
                 .contentType("application/json")
                 .body(request1)
-                .when().post(String.format("/play/%s/score", game.getId()))
+                .when().post(String.format("/games/%s/round-results", game.getId()))
                 .then()
                 .statusCode(200);
 
         given()
                 .contentType("application/json")
                 .body(request2)
-                .when().post(String.format("/play/%s/score", game.getId()))
+                .when().post(String.format("/games/%s/round-results", game.getId()))
                 .then()
                 .statusCode(200);
 
         final Game gameAfter = gameRepository.findById(game.getId());
+        final var rounds = gameAfter.getScores().getRounds();
+        final var firstRound = rounds.getFirst();
+        final var secondRound = rounds.get(1);
+        final var thirdRound = rounds.getLast();
 
-        Assertions.assertNotNull(gameAfter.getScores().getRounds().getFirst().getSubmittedAt());
-        Assertions.assertEquals(3, gameAfter.getScores().getRounds().size());
-        Assertions.assertEquals(0, gameAfter.getScores().getRounds().getFirst().getNumber());
-        Assertions.assertEquals(10, gameAfter.getScores().getRounds().getFirst().getTeam1());
-        Assertions.assertEquals(90, gameAfter.getScores().getRounds().getFirst().getTeam2());
-        Assertions.assertEquals(2, gameAfter.getScores().getRounds().getLast().getNumber());
-        Assertions.assertEquals(-5, gameAfter.getScores().getRounds().getLast().getTeam1());
-        Assertions.assertEquals(105, gameAfter.getScores().getRounds().getLast().getTeam2());
+        Assertions.assertEquals(3, rounds.size());
+        Assertions.assertNotNull(firstRound.getSubmittedAt());
+        Assertions.assertEquals(0, firstRound.getNumber());
+        Assertions.assertEquals(10, firstRound.getTeam1());
+        Assertions.assertEquals(90, firstRound.getTeam2());
+        Assertions.assertNotNull(secondRound.getSubmittedAt());
+        Assertions.assertEquals(1, secondRound.getNumber());
+        Assertions.assertEquals(50, secondRound.getTeam1());
+        Assertions.assertEquals(50, secondRound.getTeam2());
+        Assertions.assertNotNull(thirdRound.getSubmittedAt());
+        Assertions.assertEquals(2, thirdRound.getNumber());
+        Assertions.assertEquals(-5, thirdRound.getTeam1());
+        Assertions.assertEquals(105, thirdRound.getTeam2());
     }
 
     @Test
@@ -133,9 +146,13 @@ class PlayResourceTest extends BaseTest {
         given()
                 .contentType("application/json")
                 .body(request)
-                .when().post(String.format("/play/%s/score", game.getId()))
+                .when().post(String.format("/games/%s/round-results", game.getId()))
                 .then()
                 .statusCode(404);
+
+        final Game unchanged = gameRepository.findById(game.getId());
+        Assertions.assertTrue(unchanged.getHasEnded());
+        Assertions.assertEquals(0, unchanged.getScores().getRounds().size());
     }
 
     @Test
@@ -146,10 +163,30 @@ class PlayResourceTest extends BaseTest {
         given()
                 .contentType("application/json")
                 .body(request)
-                .when().post(String.format("/play/%s/score", "00000000-0000-0000-0000-000000000000"))
+                .when().post(String.format("/games/%s/round-results", "00000000-0000-0000-0000-000000000000"))
                 .then()
                 .statusCode(404);
 
+    }
+
+    @Test
+    void submitScore_invalidId() {
+        final SubmitScoreRequest request = new SubmitScoreRequest(10, 90);
+
+        given().contentType("application/json")
+                .body(request)
+                .when().post("/games/invalidUUID/round-results")
+                .then().statusCode(400);
+    }
+
+    @Test
+    void submitScore_missingRequest() {
+        given()
+                .contentType("application/json")
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then()
+                .statusCode(400);
+        Assertions.assertEquals(0, gameRepository.findById(game.getId()).getScores().getRounds().size());
     }
 
     @Transactional
