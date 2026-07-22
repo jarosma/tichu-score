@@ -27,6 +27,9 @@ public class Player {
 
     private boolean enabled;
 
+    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private PlayerStats playerStats;
+
     public static Player from(final PlayerPostRequest playerPostRequest) {
         return from(playerPostRequest.name());
     }

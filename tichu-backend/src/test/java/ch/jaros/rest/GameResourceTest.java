@@ -26,7 +26,7 @@ class GameResourceTest extends BaseTest {
     TeamRepository teamRepository;
     @Inject
     PlayerRepository playerRepository;
-    
+
     @BeforeEach
     @Transactional
     void setup() {

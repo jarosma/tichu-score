@@ -18,6 +18,8 @@ public class Team {
 
     @Id
     @EqualsAndHashCode.Include
+    @OneToOne
+    @JoinColumn(name = "team_stats")
     private UUID id;
 
     @Column(length = 64)
@@ -33,6 +35,9 @@ public class Team {
 
     @Column(name = "team_elo")
     private Integer teamElo;
+
+    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private TeamStats teamStats;
 
     public static UUID createId(final String name) {
         return UUID.nameUUIDFromBytes(name.getBytes());

@@ -2,6 +2,7 @@ package ch.jaros.rest;
 
 
 import ch.jaros.entity.Game;
+import ch.jaros.entity.Player;
 import ch.jaros.entity.Score;
 import ch.jaros.entity.Team;
 import ch.jaros.exception.TeamDoesNotExistException;
@@ -86,4 +87,18 @@ public class ManageGameResource {
                 .team2(team2)
                 .build();
     }
+
+
+    //private void updateStats(final Game game) {
+    //}
+//
+    //private Player updatePlayerStats(final Game game) {
+//
+    //    return
+    //}
+//
+    //private Team updateTeamStats(final Game game) {
+//
+    //}
+
 }
