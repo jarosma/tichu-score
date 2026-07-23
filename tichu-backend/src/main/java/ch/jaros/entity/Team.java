@@ -39,21 +39,30 @@ public class Team {
     @Column(nullable = false)
     private boolean enabled = true;
 
-    @OneToOne(mappedBy = "team", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "team_stats_id", nullable = false, unique = true)
     @JsonIgnore
     private TeamStats teamStats;
+
+    @PrePersist
+    void initializeStats() {
+        if (teamStats == null) setTeamStats(TeamStats.create(this));
+    }
 
     public static UUID createId() {
         return UUID.randomUUID();
     }
 
     public static Team create(final String name, final Player player1, final Player player2) {
-        return Team.builder()
+        final Team team = Team.builder()
                 .id(createId())
                 .name(name)
                 .player1(player1)
                 .player2(player2)
                 .build();
+
+        team.setTeamStats(TeamStats.create(team));
+        return team;
     }
 
     public boolean isEnabled() {

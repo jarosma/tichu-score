@@ -7,6 +7,7 @@ import ch.jaros.entity.Game;
 import ch.jaros.repository.GameRepository;
 import ch.jaros.repository.PlayerRepository;
 import ch.jaros.repository.TeamRepository;
+import ch.jaros.repository.TeamStatsRepository;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -23,6 +24,7 @@ class TeamDeleteResourceTest extends BaseTest {
     @Inject TeamRepository teamRepository;
     @Inject PlayerRepository playerRepository;
     @Inject GameRepository gameRepository;
+    @Inject TeamStatsRepository teamStatsRepository;
 
     @BeforeEach
     @Transactional
@@ -37,6 +39,7 @@ class TeamDeleteResourceTest extends BaseTest {
         given().when().get("/teams/" + team.getId()).then().statusCode(404);
 
         Assertions.assertNull(teamRepository.findById(team.getId()));
+        Assertions.assertNull(teamStatsRepository.findById(team.getId()));
     }
 
     @Test

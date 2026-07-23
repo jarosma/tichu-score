@@ -27,16 +27,25 @@ public class Player {
 
     private boolean enabled;
 
-    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "stats_id", nullable = false, unique = true)
     @JsonIgnore
     private PlayerStats playerStats;
 
+    @PrePersist
+    void initializeStats() {
+        if (playerStats == null) setPlayerStats(PlayerStats.create(this));
+    }
+
     public static Player create(final String name) {
-        return Player.builder()
+        final Player player = Player.builder()
                 .id(UUID.randomUUID())
                 .name(name)
                 .enabled(true)
                 .build();
+
+        player.setPlayerStats(PlayerStats.create(player));
+        return player;
     }
 
     public static Player from(final String name) {

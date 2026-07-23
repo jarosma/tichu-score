@@ -2,6 +2,7 @@ package ch.jaros.service;
 
 import ch.jaros.entity.Player;
 import ch.jaros.entity.Team;
+import ch.jaros.entity.TeamStats;
 import ch.jaros.exception.EntityConflictException;
 import ch.jaros.exception.PlayerDoesNotExistException;
 import ch.jaros.exception.PlayersNotDistinctException;
@@ -9,6 +10,7 @@ import ch.jaros.exception.TeamDoesNotExistException;
 import ch.jaros.repository.GameRepository;
 import ch.jaros.repository.PlayerRepository;
 import ch.jaros.repository.TeamRepository;
+import ch.jaros.repository.TeamStatsRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class TeamService {
     private final PlayerRepository playerRepository;
     private final GameRepository gameRepository;
     private final TeamRepository teamRepository;
+    private final TeamStatsRepository teamStatsRepository;
 
     public List<Team> getAll() {
         return teamRepository.listAll();
@@ -51,6 +54,14 @@ public class TeamService {
         return team;
     }
 
+    public TeamStats getStats(final UUID teamId) {
+        final Team team = getById(teamId);
+        if (team.getTeamStats() == null) {
+            throw new IllegalStateException("Team stats do not exist");
+        }
+        return team.getTeamStats();
+    }
+
     @Transactional
     public void updateStatus(final UUID teamId, final boolean enabled) {
         final Team team = getById(teamId);
@@ -62,10 +73,12 @@ public class TeamService {
 
     @Transactional
     public void delete(final UUID teamId) {
-        getById(teamId);
+        final Team team = getById(teamId);
         if (gameRepository.hasGameForTeam(teamId)) {
             throw new EntityConflictException("Team is referenced by a game");
         }
-        teamRepository.deleteById(teamId);
+        final UUID statsId = team.getTeamStats().getId();
+        teamRepository.delete(team);
+        teamStatsRepository.deleteById(statsId);
     }
 }

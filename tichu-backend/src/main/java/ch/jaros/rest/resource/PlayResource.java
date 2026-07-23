@@ -28,7 +28,12 @@ public class PlayResource {
     public Response submitScore(@PathParam("gameId") final String gameIdValue,
                                 @NotNull @Valid final SubmitScoreRequest request) {
         final UUID gameId = PathUuid.parse(gameIdValue);
-        gameService.submitScore(gameId, request.team1Score(), request.team2Score());
+        if (request.tichuCalls() == null) {
+            gameService.submitScore(gameId, request.team1Score(), request.team2Score());
+        }
+        else {
+            gameService.submitScore(gameId, request.team1Score(), request.team2Score(), request.tichuCalls());
+        }
         return Response.ok().build();
     }
 }

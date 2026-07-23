@@ -1,6 +1,7 @@
 package ch.jaros.rest;
 
 import ch.jaros.rest.request.SubmitScoreRequest;
+import ch.jaros.rest.request.TichuCallRequest;
 
 import ch.jaros.BaseTest;
 import ch.jaros.entity.*;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
@@ -201,6 +203,60 @@ class ScoreSubmitResourceTest extends BaseTest {
     @Test
     void submitScore_scoreNotDivisibleByFive() {
         final SubmitScoreRequest request = new SubmitScoreRequest(11, 89);
+
+        given().contentType("application/json")
+                .body(request)
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(400);
+
+        Assertions.assertEquals(0, gameRepository.findById(game.getId()).getRounds().size());
+    }
+
+    @Test
+    void submitScore_multipleSuccessfulTichus() {
+        final SubmitScoreRequest request = new SubmitScoreRequest(100, 0, List.of(
+                new TichuCallRequest(player1.getId(), true),
+                new TichuCallRequest(player2.getId(), true)));
+
+        given().contentType("application/json")
+                .body(request)
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(400);
+
+        Assertions.assertEquals(0, gameRepository.findById(game.getId()).getRounds().size());
+    }
+
+    @Test
+    void submitScore_duplicatePlayerTichu() {
+        final SubmitScoreRequest request = new SubmitScoreRequest(100, 0, List.of(
+                new TichuCallRequest(player1.getId(), true),
+                new TichuCallRequest(player1.getId(), false)));
+
+        given().contentType("application/json")
+                .body(request)
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(400);
+
+        Assertions.assertEquals(0, gameRepository.findById(game.getId()).getRounds().size());
+    }
+
+    @Test
+    void submitScore_unknownTichuPlayer() {
+        final SubmitScoreRequest request = new SubmitScoreRequest(100, 0, List.of(
+                new TichuCallRequest(UUID.randomUUID(), true)));
+
+        given().contentType("application/json")
+                .body(request)
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(400);
+
+        Assertions.assertEquals(0, gameRepository.findById(game.getId()).getRounds().size());
+    }
+
+    @Test
+    void submitScore_nullTichuCallField() {
+        final SubmitScoreRequest request = new SubmitScoreRequest(100, 0, List.of(
+                new TichuCallRequest(null, true)));
 
         given().contentType("application/json")
                 .body(request)

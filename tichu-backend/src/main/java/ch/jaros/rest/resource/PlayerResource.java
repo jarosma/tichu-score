@@ -2,6 +2,7 @@ package ch.jaros.rest.resource;
 
 import ch.jaros.rest.PathUuid;
 import ch.jaros.rest.response.PlayerResponse;
+import ch.jaros.rest.response.PlayerStatsResponse;
 import ch.jaros.rest.request.PlayerCreateRequest;
 import ch.jaros.rest.request.PlayerStatusRequest;
 import ch.jaros.service.PlayerService;
@@ -33,6 +34,13 @@ public class PlayerResource {
     public Response getById(@PathParam("playerId") String playerIdValue) {
         final UUID playerId = PathUuid.parse(playerIdValue);
         return Response.ok(PlayerResponse.from(playerService.getById(playerId))).build();
+    }
+
+    @GET
+    @Path("/{playerId}/stats")
+    public Response getStats(@PathParam("playerId") String playerIdValue) {
+        final UUID playerId = PathUuid.parse(playerIdValue);
+        return Response.ok(PlayerStatsResponse.from(playerService.getStats(playerId))).build();
     }
 
     @POST

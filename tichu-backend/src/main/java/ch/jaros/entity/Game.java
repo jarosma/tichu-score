@@ -41,7 +41,7 @@ public class Game {
     private Team team2;
 
     @Builder.Default
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @OrderBy("number ASC")
     @Getter(AccessLevel.NONE)
     private List<GameRound> rounds = new ArrayList<>();
@@ -70,9 +70,11 @@ public class Game {
         return getEndedAt() != null;
     }
 
-    public void addRound(final int team1Score, final int team2Score) {
+    public GameRound addRound(final int team1Score, final int team2Score) {
         final int nextRoundNumber = rounds.isEmpty() ? 0 : getLastRoundNumber() + 1;
-        rounds.add(GameRound.create(this, nextRoundNumber, team1Score, team2Score));
+        final GameRound round = GameRound.create(this, nextRoundNumber, team1Score, team2Score);
+        rounds.add(round);
+        return round;
     }
 
     public int getLastRoundNumber() {

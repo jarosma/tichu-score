@@ -1,9 +1,11 @@
 package ch.jaros.service;
 
 import ch.jaros.entity.Player;
+import ch.jaros.entity.PlayerStats;
 import ch.jaros.exception.EntityConflictException;
 import ch.jaros.exception.PlayerDoesNotExistException;
 import ch.jaros.repository.PlayerRepository;
+import ch.jaros.repository.PlayerStatsRepository;
 import ch.jaros.repository.TeamRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
@@ -17,6 +19,7 @@ import java.util.UUID;
 public class PlayerService {
 
     private final PlayerRepository playerRepository;
+    private final PlayerStatsRepository playerStatsRepository;
     private final TeamRepository teamRepository;
 
     public List<Player> getAll() {
@@ -39,6 +42,14 @@ public class PlayerService {
         return player;
     }
 
+    public PlayerStats getStats(final UUID playerId) {
+        final Player player = getById(playerId);
+        if (player.getPlayerStats() == null) {
+            throw new IllegalStateException("Player stats do not exist");
+        }
+        return player.getPlayerStats();
+    }
+
     @Transactional
     public void updateStatus(final UUID playerId, final boolean enabled) {
         final Player player = getById(playerId);
@@ -50,10 +61,12 @@ public class PlayerService {
 
     @Transactional
     public void delete(final UUID playerId) {
-        getById(playerId);
+        final Player player = getById(playerId);
         if (teamRepository.hasTeamForPlayer(playerId)) {
             throw new EntityConflictException("Player is referenced by a team");
         }
-        playerRepository.deleteById(playerId);
+        final UUID statsId = player.getPlayerStats().getId();
+        playerRepository.delete(player);
+        playerStatsRepository.deleteById(statsId);
     }
 }

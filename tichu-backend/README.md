@@ -48,6 +48,7 @@ Run the complete test suite with:
 ### Players
 
 - `GET /players`
+- `GET /players/{playerId}/stats`
 - `POST /players`
 - `PATCH /players/{playerId}`
 - `DELETE /players/{playerId}`
@@ -55,6 +56,7 @@ Run the complete test suite with:
 ### Teams
 
 - `GET /teams`
+- `GET /teams/{teamId}/stats`
 - `POST /teams`
 - `PATCH /teams/{teamId}`
 - `DELETE /teams/{teamId}`
@@ -68,6 +70,12 @@ Run the complete test suite with:
 
 Path parameters must be UUIDs. Invalid UUID syntax returns `400`; valid but
 unknown resources return `404`.
+
+Round submissions may include a `tichuCalls` array. Each entry contains a player ID
+and whether that player's Tichu was successful. A player may submit only one
+Tichu per round, and only one Tichu may be successful in a round. The submitted
+scores are final scores; the backend does not add Tichu bonuses. Player and team
+statistics are updated when the game is ended.
 
 ## Score Rules
 
