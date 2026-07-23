@@ -4,12 +4,12 @@ import jakarta.ws.rs.BadRequestException;
 
 import java.util.UUID;
 
-final class PathUuid {
+public final class PathUuid {
 
     private PathUuid() {
     }
 
-    static UUID parse(final String value) {
+    public static UUID parse(final String value) {
         try {
             return UUID.fromString(value);
         } catch (IllegalArgumentException exception) {

@@ -1,4 +1,4 @@
-package ch.jaros.rest;
+package ch.jaros.rest.request;
 
 import jakarta.validation.constraints.NotNull;
 

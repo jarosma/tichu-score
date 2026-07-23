@@ -1,8 +1,6 @@
 package ch.jaros.exception;
 
-import jakarta.ws.rs.NotFoundException;
-
-public class TeamDoesNotExistException extends NotFoundException {
+public class TeamDoesNotExistException extends DomainNotFoundException {
     public TeamDoesNotExistException(final String message) {
         super(message);
     }

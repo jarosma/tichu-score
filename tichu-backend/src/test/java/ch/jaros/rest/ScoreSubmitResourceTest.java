@@ -1,9 +1,12 @@
 package ch.jaros.rest;
 
+import ch.jaros.rest.request.SubmitScoreRequest;
+
 import ch.jaros.BaseTest;
 import ch.jaros.entity.*;
 import ch.jaros.repository.GameRepository;
 import ch.jaros.repository.GameRoundRepository;
+import ch.jaros.rest.response.GameScoresResponse;
 import ch.jaros.repository.PlayerRepository;
 import ch.jaros.repository.TeamRepository;
 import io.quarkus.test.junit.QuarkusTest;
@@ -14,11 +17,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.is;
 
 @QuarkusTest
 class ScoreSubmitResourceTest extends BaseTest {
@@ -79,13 +81,13 @@ class ScoreSubmitResourceTest extends BaseTest {
 
         final Game gameAfter = gameRepository.findById(game.getId());
 
-        final var rounds = gameAfter.getScores().getRounds();
+        final var rounds = GameScoresResponse.from(gameAfter.getRounds()).rounds();
 
         Assertions.assertEquals(1, rounds.size());
-        Assertions.assertNotNull(rounds.getFirst().getSubmittedAt());
-        Assertions.assertEquals(0, rounds.getFirst().getNumber());
-        Assertions.assertEquals(10, rounds.getFirst().getTeam1());
-        Assertions.assertEquals(90, rounds.getFirst().getTeam2());
+        Assertions.assertNotNull(rounds.getFirst().submittedAt());
+        Assertions.assertEquals(0, rounds.getFirst().number());
+        Assertions.assertEquals(10, rounds.getFirst().team1());
+        Assertions.assertEquals(90, rounds.getFirst().team2());
     }
 
     @Test
@@ -116,24 +118,24 @@ class ScoreSubmitResourceTest extends BaseTest {
                 .statusCode(200);
 
         final Game gameAfter = gameRepository.findById(game.getId());
-        final var rounds = gameAfter.getScores().getRounds();
+        final var rounds = GameScoresResponse.from(gameAfter.getRounds()).rounds();
         final var firstRound = rounds.getFirst();
         final var secondRound = rounds.get(1);
         final var thirdRound = rounds.getLast();
 
         Assertions.assertEquals(3, rounds.size());
-        Assertions.assertNotNull(firstRound.getSubmittedAt());
-        Assertions.assertEquals(0, firstRound.getNumber());
-        Assertions.assertEquals(10, firstRound.getTeam1());
-        Assertions.assertEquals(90, firstRound.getTeam2());
-        Assertions.assertNotNull(secondRound.getSubmittedAt());
-        Assertions.assertEquals(1, secondRound.getNumber());
-        Assertions.assertEquals(50, secondRound.getTeam1());
-        Assertions.assertEquals(50, secondRound.getTeam2());
-        Assertions.assertNotNull(thirdRound.getSubmittedAt());
-        Assertions.assertEquals(2, thirdRound.getNumber());
-        Assertions.assertEquals(-5, thirdRound.getTeam1());
-        Assertions.assertEquals(105, thirdRound.getTeam2());
+        Assertions.assertNotNull(firstRound.submittedAt());
+        Assertions.assertEquals(0, firstRound.number());
+        Assertions.assertEquals(10, firstRound.team1());
+        Assertions.assertEquals(90, firstRound.team2());
+        Assertions.assertNotNull(secondRound.submittedAt());
+        Assertions.assertEquals(1, secondRound.number());
+        Assertions.assertEquals(50, secondRound.team1());
+        Assertions.assertEquals(50, secondRound.team2());
+        Assertions.assertNotNull(thirdRound.submittedAt());
+        Assertions.assertEquals(2, thirdRound.number());
+        Assertions.assertEquals(-5, thirdRound.team1());
+        Assertions.assertEquals(105, thirdRound.team2());
         Assertions.assertEquals(3, gameRoundRepository.count("game.id", game.getId()));
     }
 
@@ -156,7 +158,7 @@ class ScoreSubmitResourceTest extends BaseTest {
 
         final Game unchanged = gameRepository.findById(game.getId());
         Assertions.assertTrue(unchanged.getHasEnded());
-        Assertions.assertEquals(0, unchanged.getScores().getRounds().size());
+        Assertions.assertEquals(0, unchanged.getRounds().size());
     }
 
     @Test
@@ -169,7 +171,8 @@ class ScoreSubmitResourceTest extends BaseTest {
                 .body(request)
                 .when().post(String.format("/games/%s/round-results", "00000000-0000-0000-0000-000000000000"))
                 .then()
-                .statusCode(404);
+                .statusCode(404)
+                .body(is("Ongoing game does not exist"));
 
     }
 
@@ -184,13 +187,37 @@ class ScoreSubmitResourceTest extends BaseTest {
     }
 
     @Test
+    void submitScore_invalidTotal() {
+        final SubmitScoreRequest request = new SubmitScoreRequest(10, 80);
+
+        given().contentType("application/json")
+                .body(request)
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(400);
+
+        Assertions.assertEquals(0, gameRepository.findById(game.getId()).getRounds().size());
+    }
+
+    @Test
+    void submitScore_scoreNotDivisibleByFive() {
+        final SubmitScoreRequest request = new SubmitScoreRequest(11, 89);
+
+        given().contentType("application/json")
+                .body(request)
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(400);
+
+        Assertions.assertEquals(0, gameRepository.findById(game.getId()).getRounds().size());
+    }
+
+    @Test
     void submitScore_missingRequest() {
         given()
                 .contentType("application/json")
                 .when().post(String.format("/games/%s/round-results", game.getId()))
                 .then()
                 .statusCode(400);
-        Assertions.assertEquals(0, gameRepository.findById(game.getId()).getScores().getRounds().size());
+        Assertions.assertEquals(0, gameRepository.findById(game.getId()).getRounds().size());
     }
 
     @Transactional

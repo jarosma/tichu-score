@@ -1,5 +1,7 @@
 package ch.jaros.rest;
 
+import ch.jaros.rest.request.StartGameRequest;
+
 import ch.jaros.BaseTest;
 import ch.jaros.entity.GameWinner;
 import ch.jaros.entity.Game;
@@ -96,7 +98,7 @@ class GameStartResourceTest extends BaseTest {
         assertNotNull(persisted.getStartedAt());
         assertNull(persisted.getEndedAt());
         assertNull(persisted.getWinner());
-        assertTrue(persisted.getScores().getRounds().isEmpty());
+        assertTrue(persisted.getRounds().isEmpty());
 
     }
 
@@ -213,7 +215,8 @@ class GameStartResourceTest extends BaseTest {
                 .body(startGameRequest)
                 .when().post("/games")
                 .then()
-                .statusCode(404);
+                .statusCode(404)
+                .body(is("Team 2 does not exist"));
 
         assertEquals(0, gameRepository.count());
     }

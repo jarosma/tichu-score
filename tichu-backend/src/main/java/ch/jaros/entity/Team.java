@@ -21,7 +21,7 @@ public class Team {
     @EqualsAndHashCode.Include
     private UUID id;
 
-    @Column(length = 64)
+    @Column(nullable = false, length = 64)
     private String name;
 
     @ManyToOne(optional = false)
@@ -47,16 +47,29 @@ public class Team {
         return UUID.randomUUID();
     }
 
+    public static Team create(final String name, final Player player1, final Player player2) {
+        return Team.builder()
+                .id(createId())
+                .name(name)
+                .player1(player1)
+                .player2(player2)
+                .build();
+    }
+
     public boolean isEnabled() {
-        return enabled && player1 != null && player2 != null
+        return enabled && hasEnabledPlayers();
+    }
+
+    public boolean hasEnabledPlayers() {
+        return player1 != null && player2 != null
                 && player1.isEnabled() && player2.isEnabled();
     }
 
     public boolean distinctTo(final Team team) {
-        return this.player1 != team.player1
-                && this.player1 != team.player2
-                && this.player2 != team.player1
-                && this.player2 != team.player2;
+        return !this.player1.getId().equals(team.player1.getId())
+                && !this.player1.getId().equals(team.player2.getId())
+                && !this.player2.getId().equals(team.player1.getId())
+                && !this.player2.getId().equals(team.player2.getId());
     }
 
 }

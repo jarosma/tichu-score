@@ -8,7 +8,4 @@ import java.util.UUID;
 
 @ApplicationScoped
 public class PlayerRepository implements PanacheRepositoryBase<Player, UUID> {
-    public void update(final Player player) {
-        getEntityManager().merge(player);
-    }
 }

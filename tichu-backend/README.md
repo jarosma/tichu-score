@@ -1,62 +1,99 @@
-# tichu-backend
+# Tichu Backend
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Quarkus REST backend for managing Tichu players, teams, games and round scores.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+## Requirements
 
-## Running the application in dev mode
+- Java 21
+- Docker with Docker Compose
+- Maven Wrapper (`./mvnw`)
 
-You can run your application in dev mode that enables live coding using:
+## Local Development
 
-```shell script
+Start PostgreSQL from this directory:
+
+```shell
+docker compose -f docker-compose.dev.yml up -d
+```
+
+Start Quarkus in dev mode:
+
+```shell
 ./mvnw quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+The API is available at `http://localhost:8080`. The dev CORS origin defaults to
+`http://localhost:5173` and can be changed with `TICHU_CORS_ORIGINS`.
 
-## Packaging and running the application
+Stop PostgreSQL with:
 
-The application can be packaged using:
-
-```shell script
-./mvnw package
+```shell
+docker compose -f docker-compose.dev.yml down
 ```
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+The database schema is created and migrated by Flyway. Hibernate does not create
+or update the schema. The initial migration is in
+`src/main/resources/db/migration/V1.0.0__Init.sql`.
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
+## Tests
 
-If you want to build an _über-jar_, execute the following command:
+Run the complete test suite with:
 
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
+```shell
+./mvnw test
 ```
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+## REST API
 
-## Creating a native executable
+### Players
 
-You can create a native executable using:
+- `GET /players`
+- `POST /players`
+- `PATCH /players/{playerId}`
+- `DELETE /players/{playerId}`
 
-```shell script
-./mvnw package -Dnative
-```
+### Teams
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
+- `GET /teams`
+- `POST /teams`
+- `PATCH /teams/{teamId}`
+- `DELETE /teams/{teamId}`
 
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
+### Games
 
-You can then execute your native executable with: `./target/tichu-backend-1.0.0-SNAPSHOT-runner`
+- `POST /games`
+- `GET /games/{gameId}`
+- `POST /games/{gameId}/round-results`
+- `POST /games/{gameId}/end`
 
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
+Path parameters must be UUIDs. Invalid UUID syntax returns `400`; valid but
+unknown resources return `404`.
 
-## Provided Code
+## Score Rules
 
-### REST
+For every round:
 
-Easily start your REST Web Services
+- Both team scores must be divisible by `5`.
+- The sum of both scores must be divisible by `100`.
+- Negative scores are allowed when they satisfy both rules.
 
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+The rules are validated at the REST boundary and again in the domain model.
+
+## Production Configuration
+
+Set `TICHU_CORS_ORIGINS` to the allowed browser origin or comma-separated origins
+before starting the application with the `prod` profile. The root
+`docker-compose.yml` uses `http://localhost:81` as a local deployment default.
+
+The production container uses `src/main/docker/Dockerfile.jvm`.
+
+## Package Structure
+
+- `entity`: JPA entities and domain behavior
+- `repository`: Panache persistence access
+- `service`: application use cases and transactions
+- `rest/request`: incoming API models
+- `rest/response`: outgoing API models
+- `rest/resource`: REST endpoints
+- `rest/mapper`: exception-to-response mappings
+- `exception`: domain exceptions

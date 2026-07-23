@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.is;
 
 @QuarkusTest
 class TeamDeleteResourceTest extends BaseTest {
@@ -69,7 +70,8 @@ class TeamDeleteResourceTest extends BaseTest {
         persistGame(game);
 
         given().when().delete("/teams/" + team.getId())
-                .then().statusCode(409);
+                .then().statusCode(409)
+                .body(is("Team is referenced by a game"));
 
         Assertions.assertNotNull(teamRepository.findById(team.getId()));
         Assertions.assertEquals(1, gameRepository.count());

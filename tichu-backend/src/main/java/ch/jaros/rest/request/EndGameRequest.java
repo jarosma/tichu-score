@@ -1,4 +1,4 @@
-package ch.jaros.rest;
+package ch.jaros.rest.request;
 
 import ch.jaros.entity.GameWinner;
 import jakarta.validation.constraints.NotNull;

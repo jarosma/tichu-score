@@ -1,5 +1,7 @@
 package ch.jaros.rest;
 
+import ch.jaros.rest.request.PlayerStatusRequest;
+
 import ch.jaros.BaseTest;
 import ch.jaros.entity.Player;
 import ch.jaros.entity.Team;

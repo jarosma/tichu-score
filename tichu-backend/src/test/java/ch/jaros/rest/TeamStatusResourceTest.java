@@ -1,5 +1,7 @@
 package ch.jaros.rest;
 
+import ch.jaros.rest.request.TeamStatusRequest;
+
 import ch.jaros.BaseTest;
 import ch.jaros.entity.Player;
 import ch.jaros.entity.Team;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.is;
 
 @QuarkusTest
 class TeamStatusResourceTest extends BaseTest {
@@ -61,7 +64,8 @@ class TeamStatusResourceTest extends BaseTest {
         given().contentType("application/json")
                 .body(new TeamStatusRequest(true))
                 .when().patch("/teams/" + team.getId())
-                .then().statusCode(409);
+                .then().statusCode(409)
+                .body(is("Team has a disabled player"));
 
         final Team unchanged = teamRepository.findById(team.getId());
         Assertions.assertFalse(unchanged.isEnabled());

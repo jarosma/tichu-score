@@ -1,5 +1,7 @@
 package ch.jaros.rest;
 
+import ch.jaros.rest.request.EndGameRequest;
+
 import ch.jaros.BaseTest;
 import ch.jaros.entity.Game;
 import ch.jaros.entity.GameWinner;

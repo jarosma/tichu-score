@@ -1,6 +1,5 @@
 package ch.jaros.entity;
 
-import ch.jaros.rest.PlayerPostRequest;
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
@@ -32,16 +31,16 @@ public class Player {
     @JsonIgnore
     private PlayerStats playerStats;
 
-    public static Player from(final PlayerPostRequest playerPostRequest) {
-        return from(playerPostRequest.name());
-    }
-
-    public static Player from(final String name) {
+    public static Player create(final String name) {
         return Player.builder()
                 .id(UUID.randomUUID())
                 .name(name)
                 .enabled(true)
                 .build();
+    }
+
+    public static Player from(final String name) {
+        return create(name);
     }
 
 }

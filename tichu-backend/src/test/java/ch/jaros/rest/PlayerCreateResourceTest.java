@@ -1,5 +1,7 @@
 package ch.jaros.rest;
 
+import ch.jaros.rest.request.PlayerCreateRequest;
+
 import ch.jaros.BaseTest;
 import ch.jaros.entity.Player;
 import ch.jaros.repository.PlayerRepository;
@@ -32,7 +34,7 @@ class PlayerCreateResourceTest extends BaseTest {
     @Test
     void create() {
         given().contentType("application/json")
-                .body(new PlayerPostRequest("Marco"))
+                .body(new PlayerCreateRequest("Marco"))
                 .when().post("/players")
                 .then().statusCode(201)
                 .body("id", notNullValue())
@@ -69,7 +71,7 @@ class PlayerCreateResourceTest extends BaseTest {
         persist(player);
 
         given().contentType("application/json")
-                .body(new PlayerPostRequest("Marco"))
+                .body(new PlayerCreateRequest("Marco"))
                 .when().post("/players").then().statusCode(409);
 
         assertEquals(1, playerRepository.count());
@@ -79,7 +81,7 @@ class PlayerCreateResourceTest extends BaseTest {
     @ValueSource(strings = {"", "   "})
     void create_invalidName(final String name) {
         given().contentType("application/json")
-                .body(new PlayerPostRequest(name))
+                .body(new PlayerCreateRequest(name))
                 .when().post("/players").then().statusCode(400);
 
         assertEquals(0, playerRepository.count());
@@ -88,7 +90,7 @@ class PlayerCreateResourceTest extends BaseTest {
     @Test
     void create_nameTooLong() {
         given().contentType("application/json")
-                .body(new PlayerPostRequest("a".repeat(65)))
+                .body(new PlayerCreateRequest("a".repeat(65)))
                 .when().post("/players").then().statusCode(400);
 
         assertEquals(0, playerRepository.count());
@@ -98,7 +100,7 @@ class PlayerCreateResourceTest extends BaseTest {
     void create_nameExactly64Characters() {
         final String name = "a".repeat(64);
         given().contentType("application/json")
-                .body(new PlayerPostRequest(name))
+                .body(new PlayerCreateRequest(name))
                 .when().post("/players")
                 .then().statusCode(201)
                 .body("name", is(name));

@@ -1,6 +1,7 @@
 package ch.jaros.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ch.jaros.exception.InvalidScoreException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -45,6 +46,9 @@ public class GameRound {
     }
 
     static GameRound create(final Game game, final int number, final int team1, final int team2) {
+        if (team1 % 5 != 0 || team2 % 5 != 0 || (team1 + team2) % 100 != 0) {
+            throw new InvalidScoreException();
+        }
         return new GameRound(game, number, team1, team2);
     }
 }

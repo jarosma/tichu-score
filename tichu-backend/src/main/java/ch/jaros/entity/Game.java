@@ -1,8 +1,8 @@
 package ch.jaros.entity;
 
 import ch.jaros.exception.GameAlreadyEndedException;
-import ch.jaros.rest.EndGameRequest;
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
@@ -41,7 +41,7 @@ public class Game {
     private Team team2;
 
     @Builder.Default
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("number ASC")
     @Getter(AccessLevel.NONE)
     private List<GameRound> rounds = new ArrayList<>();
@@ -51,14 +51,19 @@ public class Game {
     @Column(columnDefinition = "game_winner")
     private GameWinner winner;
 
-    public static UUID createId() {
-        return UUID.randomUUID();
+    public static Game create(final Team team1, final Team team2, final OffsetDateTime startedAt) {
+        return Game.builder()
+                .id(UUID.randomUUID())
+                .startedAt(startedAt)
+                .team1(team1)
+                .team2(team2)
+                .build();
     }
 
-    public void endGame(final EndGameRequest request) throws GameAlreadyEndedException {
+    public void endGame(final GameWinner winner) throws GameAlreadyEndedException {
         if (getHasEnded()) throw new GameAlreadyEndedException();
         setEndedAt(OffsetDateTime.now());
-        setWinner(request.winner());
+        setWinner(winner);
     }
 
     public boolean getHasEnded() {
@@ -66,7 +71,7 @@ public class Game {
     }
 
     public void addRound(final int team1Score, final int team2Score) {
-        final int nextRoundNumber = getLastRoundNumber() + 1;
+        final int nextRoundNumber = rounds.isEmpty() ? 0 : getLastRoundNumber() + 1;
         rounds.add(GameRound.create(this, nextRoundNumber, team1Score, team2Score));
     }
 
@@ -77,7 +82,8 @@ public class Game {
                 .orElse(0);
     }
 
-    public Score getScores() {
-        return Score.from(rounds);
+    @JsonIgnore
+    public List<GameRound> getRounds() {
+        return List.copyOf(rounds);
     }
 }
