@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static io.restassured.RestAssured.given;
 
 @QuarkusTest
@@ -81,7 +83,7 @@ class TeamStatusResourceTest extends BaseTest {
         final Player second = Player.from("Mia");
         second.setEnabled(secondEnabled);
         final Team team = Team.builder()
-                .id(Team.createId("TeamMarco"))
+                .id(UUID.randomUUID())
                 .name("TeamMarco")
                 .player1(first)
                 .player2(second)

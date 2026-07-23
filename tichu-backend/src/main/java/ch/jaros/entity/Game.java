@@ -5,11 +5,12 @@ import ch.jaros.rest.EndGameRequest;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcType;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
-import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -40,19 +41,18 @@ public class Game {
     private Team team2;
 
     @Builder.Default
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "scores", nullable = false)
-    private Score scores = new Score();
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("number ASC")
+    @Getter(AccessLevel.NONE)
+    private List<GameRound> rounds = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @JdbcType(PostgreSQLEnumJdbcType.class)
     @Column(columnDefinition = "game_winner")
     private GameWinner winner;
 
-    public static UUID createId(final UUID team1, final UUID team2, final OffsetDateTime time) {
-        String data = team1.toString() + "-" + team2.toString() + "-" + time.toString();
-
-        return UUID.nameUUIDFromBytes(data.getBytes());
+    public static UUID createId() {
+        return UUID.randomUUID();
     }
 
     public void endGame(final EndGameRequest request) throws GameAlreadyEndedException {
@@ -64,5 +64,20 @@ public class Game {
     public boolean getHasEnded() {
         return getEndedAt() != null;
     }
-}
 
+    public void addRound(final int team1Score, final int team2Score) {
+        final int nextRoundNumber = getLastRoundNumber() + 1;
+        rounds.add(GameRound.create(this, nextRoundNumber, team1Score, team2Score));
+    }
+
+    public int getLastRoundNumber() {
+        return rounds.stream()
+                .max(Comparator.comparingInt(GameRound::getNumber))
+                .map(GameRound::getNumber)
+                .orElse(0);
+    }
+
+    public Score getScores() {
+        return Score.from(rounds);
+    }
+}

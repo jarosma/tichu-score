@@ -47,22 +47,23 @@ class TeamCreateResourceTest extends BaseTest {
 
         final TeamCreateRequest request = new TeamCreateRequest("TeamMarco", player1.getId(), player2.getId());
 
-        given()
+        final String teamId = given()
                 .contentType("application/json")
                 .body(request)
                 .when().post("/teams")
                 .then()
                 .statusCode(201)
-                .body("id", is(Team.createId("TeamMarco").toString()))
+                .body("id", notNullValue(UUID.class))
                 .body("name", is("TeamMarco"))
                 .body("player1.id", is(player1.getId().toString()))
                 .body("player1.name", is("Marco"))
                 .body("player2.id", is(player2.getId().toString()))
                 .body("player2.name", is("Mia"))
                 .body("enabled", is(true))
-                .body("teamElo", nullValue());
+                .body("teamElo", nullValue())
+                .extract().path("id");
 
-        final Team persisted = teamRepository.findById(Team.createId("TeamMarco"));
+        final Team persisted = teamRepository.findById(UUID.fromString(teamId));
         assertNotNull(persisted);
         assertEquals("TeamMarco", persisted.getName());
         assertEquals(player1.getId(), persisted.getPlayer1().getId());
@@ -161,7 +162,7 @@ class TeamCreateResourceTest extends BaseTest {
         final Player player2 = Player.from("Mia");
 
         final Team team = Team.builder()
-                .id(Team.createId("TeamMarco"))
+                .id(UUID.randomUUID())
                 .name("TeamMarco")
                 .player1(player1)
                 .player2(player2)
@@ -228,12 +229,13 @@ class TeamCreateResourceTest extends BaseTest {
         transactionalPersist(player2);
         final String name = "a".repeat(64);
 
-        given().contentType("application/json")
+        final String teamId = given().contentType("application/json")
                 .body(new TeamCreateRequest(name, player1.getId(), player2.getId()))
                 .when().post("/teams").then().statusCode(201)
-                .body("name", is(name));
+                .body("name", is(name))
+                .extract().path("id");
 
-        final Team persisted = teamRepository.findById(Team.createId(name));
+        final Team persisted = teamRepository.findById(UUID.fromString(teamId));
         assertNotNull(persisted);
         assertEquals(player1.getId(), persisted.getPlayer1().getId());
         assertEquals(player2.getId(), persisted.getPlayer2().getId());

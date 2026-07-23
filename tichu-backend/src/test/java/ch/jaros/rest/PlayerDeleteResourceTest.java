@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static io.restassured.RestAssured.given;
 
 @QuarkusTest
@@ -95,7 +97,7 @@ class PlayerDeleteResourceTest extends BaseTest {
     @Transactional
     void persistTeam(final Player player, final Player other) {
         final Team team = Team.builder()
-                .id(Team.createId("TeamMarco"))
+                .id(UUID.randomUUID())
                 .name("TeamMarco")
                 .player1(player)
                 .player2(other)

@@ -72,7 +72,9 @@ public class TeamResource {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
 
-        if (teamRepository.findById(team.getId()) != null) return Response.status(Response.Status.CONFLICT).build();
+        if (teamRepository.find("name", request.name()).firstResult() != null) {
+            return Response.status(Response.Status.CONFLICT).build();
+        }
         teamRepository.persist(team);
         return Response.status(Response.Status.CREATED).entity(team).build();
     }
@@ -100,7 +102,7 @@ public class TeamResource {
         if (player1 == player2) throw new PlayersNotDistinctException();
 
         return Team.builder()
-                .id(Team.createId(request.name()))
+                .id(Team.createId())
                 .name(request.name())
                 .player1(player1)
                 .player2(player2)

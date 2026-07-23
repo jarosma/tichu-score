@@ -3,6 +3,7 @@ package ch.jaros.rest;
 import ch.jaros.BaseTest;
 import ch.jaros.entity.*;
 import ch.jaros.repository.GameRepository;
+import ch.jaros.repository.GameRoundRepository;
 import ch.jaros.repository.PlayerRepository;
 import ch.jaros.repository.TeamRepository;
 import io.quarkus.test.junit.QuarkusTest;
@@ -28,12 +29,14 @@ class ScoreSubmitResourceTest extends BaseTest {
     PlayerRepository playerRepository;
     @Inject
     GameRepository gameRepository;
+    @Inject
+    GameRoundRepository gameRoundRepository;
 
     private final Player player1 = Player.from("Marco");
     private final Player player2 = Player.from("Mia");
 
     private final Team team1 = Team.builder()
-            .id(Team.createId("TeamMarco"))
+            .id(UUID.randomUUID())
             .name("TeamMarco")
             .player1(player1)
             .player2(player2)
@@ -43,7 +46,7 @@ class ScoreSubmitResourceTest extends BaseTest {
     private final Player player4 = Player.from("Martin");
 
     private final Team team2 = Team.builder()
-            .id(Team.createId("TeamJana"))
+            .id(UUID.randomUUID())
             .name("TeamJana")
             .player1(player3)
             .player2(player4)
@@ -131,6 +134,7 @@ class ScoreSubmitResourceTest extends BaseTest {
         Assertions.assertEquals(2, thirdRound.getNumber());
         Assertions.assertEquals(-5, thirdRound.getTeam1());
         Assertions.assertEquals(105, thirdRound.getTeam2());
+        Assertions.assertEquals(3, gameRoundRepository.count("game.id", game.getId()));
     }
 
     @Test

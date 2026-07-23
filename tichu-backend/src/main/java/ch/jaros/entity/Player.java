@@ -38,7 +38,7 @@ public class Player {
 
     public static Player from(final String name) {
         return Player.builder()
-                .id(UUID.nameUUIDFromBytes(name.getBytes()))
+                .id(UUID.randomUUID())
                 .name(name)
                 .enabled(true)
                 .build();

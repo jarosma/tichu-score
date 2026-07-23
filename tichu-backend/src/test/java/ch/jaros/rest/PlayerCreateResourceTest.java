@@ -11,11 +11,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.UUID;
-
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
@@ -36,12 +35,12 @@ class PlayerCreateResourceTest extends BaseTest {
                 .body(new PlayerPostRequest("Marco"))
                 .when().post("/players")
                 .then().statusCode(201)
-                .body("id", is("2231d087-8e1f-3497-ac49-8ad49de37ef6"))
+                .body("id", notNullValue())
                 .body("elo", nullValue())
                 .body("name", is("Marco"))
                 .body("enabled", is(true));
 
-        final Player persisted = playerRepository.findById(UUID.fromString("2231d087-8e1f-3497-ac49-8ad49de37ef6"));
+        final Player persisted = playerRepository.find("name", "Marco").firstResult();
         assertNotNull(persisted);
         assertEquals("Marco", persisted.getName());
         assertTrue(persisted.isEnabled());
@@ -104,7 +103,7 @@ class PlayerCreateResourceTest extends BaseTest {
                 .then().statusCode(201)
                 .body("name", is(name));
 
-        assertNotNull(playerRepository.findById(Player.from(name).getId()));
+        assertNotNull(playerRepository.find("name", name).firstResult());
     }
 
     @Transactional

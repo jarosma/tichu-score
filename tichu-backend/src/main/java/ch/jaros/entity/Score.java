@@ -1,46 +1,44 @@
 package ch.jaros.entity;
 
-import ch.jaros.rest.SubmitScoreRequest;
-import lombok.*;
+import lombok.Getter;
+import lombok.ToString;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-@NoArgsConstructor
 @ToString
 public class Score {
 
-    private final List<Round> rounds = new ArrayList<>();
+    private final List<Round> rounds;
+
+    private Score(final List<Round> rounds) {
+        this.rounds = rounds;
+    }
+
+    static Score from(final List<GameRound> gameRounds) {
+        return new Score(gameRounds.stream()
+                .map(round -> new Round(round.getNumber(), round.getSubmittedAt(), round.getTeam1(), round.getTeam2()))
+                .toList());
+    }
 
     @Getter
-    @Builder
     public static class Round {
-        private int number;
-        private OffsetDateTime submittedAt;
-        private int team1;
-        private int team2;
+        private final int number;
+        private final OffsetDateTime submittedAt;
+        private final int team1;
+        private final int team2;
+
+        private Round(final int number, final OffsetDateTime submittedAt, final int team1, final int team2) {
+            this.number = number;
+            this.submittedAt = submittedAt;
+            this.team1 = team1;
+            this.team2 = team2;
+        }
     }
 
     public List<Round> getRounds() {
         return Collections.unmodifiableList(rounds);
     }
 
-    public void addRound(final SubmitScoreRequest request) {
-        addRound(request.team1Score(), request.team2Score());
-    }
-
-    public void addRound(final int team1Score, final int team2Score) {
-
-        final int nextRoundNumber = rounds.isEmpty()? 0 : rounds.getLast().getNumber() + 1;
-
-        rounds.add(Round.builder()
-                .number(nextRoundNumber)
-                .submittedAt(OffsetDateTime.now())
-                .team1(team1Score)
-                .team2(team2Score)
-                .build());
-    }
 }
-

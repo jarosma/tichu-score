@@ -157,7 +157,7 @@ class GameEndResourceTest extends BaseTest {
     Team persistTeam(final String name, final String firstName, final String secondName) {
         final Player first = Player.from(firstName);
         final Player second = Player.from(secondName);
-        final Team team = Team.builder().id(Team.createId(name)).name(name)
+        final Team team = Team.builder().id(UUID.randomUUID()).name(name)
                 .player1(first).player2(second).build();
         playerRepository.persist(first);
         playerRepository.persist(second);

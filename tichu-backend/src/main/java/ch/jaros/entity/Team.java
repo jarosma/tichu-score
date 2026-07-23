@@ -43,8 +43,8 @@ public class Team {
     @JsonIgnore
     private TeamStats teamStats;
 
-    public static UUID createId(final String name) {
-        return UUID.nameUUIDFromBytes(name.getBytes());
+    public static UUID createId() {
+        return UUID.randomUUID();
     }
 
     public boolean isEnabled() {

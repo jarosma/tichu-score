@@ -41,7 +41,9 @@ public class PlayerResource {
     @Transactional
     public Response create(@NotNull @Valid final PlayerPostRequest request) {
         final Player player = Player.from(request);
-        if (playerRepository.findById(player.getId()) != null) return Response.status(Response.Status.CONFLICT).build();
+        if (playerRepository.find("name", request.name()).firstResult() != null) {
+            return Response.status(Response.Status.CONFLICT).build();
+        }
         playerRepository.persist(player);
         return Response.status(Response.Status.CREATED).entity(player).build();
     }

@@ -2,7 +2,6 @@ package ch.jaros.rest;
 
 
 import ch.jaros.entity.Game;
-import ch.jaros.entity.Score;
 import ch.jaros.entity.Team;
 import ch.jaros.exception.GameAlreadyEndedException;
 import ch.jaros.exception.TeamDoesNotExistException;
@@ -97,11 +96,10 @@ public class GameResource {
         if (!team2.isEnabled() || !team1.isEnabled()) throw new TeamsNotEnabledException();
 
         return Game.builder()
-                .id(Game.createId(request.team1Id(), request.team2Id(), now))
+                .id(Game.createId())
                 .startedAt(now)
                 .team1(team1)
                 .team2(team2)
-                .scores(new Score())
                 .build();
     }
 }

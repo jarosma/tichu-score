@@ -29,7 +29,7 @@ public class PlayResource {
 
         if (game == null) return Response.status(Response.Status.NOT_FOUND).build();
 
-        game.getScores().addRound(request);
+        game.addRound(request.team1Score(), request.team2Score());
 
         gameRepository.persist(game);
 

@@ -45,7 +45,7 @@ class GameStartResourceTest extends BaseTest {
         final Player player2 = Player.from("Mia");
 
         final Team team1 = Team.builder()
-                .id(Team.createId("TeamMaMi"))
+                .id(UUID.randomUUID())
                 .name("TeamMaMi")
                 .player1(player1)
                 .player2(player2)
@@ -57,7 +57,7 @@ class GameStartResourceTest extends BaseTest {
         final Player player4 = Player.from("Martin");
 
         final Team team2 = Team.builder()
-                .id(Team.createId("TeamJaMa"))
+                .id(UUID.randomUUID())
                 .name("TeamJaMa")
                 .player1(player3)
                 .player2(player4)
@@ -133,7 +133,7 @@ class GameStartResourceTest extends BaseTest {
         final Player player2 = Player.from("Mia");
 
         final Team team1 = Team.builder()
-                .id(Team.createId("TeamMaMi"))
+                .id(UUID.randomUUID())
                 .name("TeamMaMi")
                 .player1(player1)
                 .player2(player2)
@@ -146,7 +146,7 @@ class GameStartResourceTest extends BaseTest {
         transactionalPersist(player3);
 
         final Team team2 = Team.builder()
-                .id(Team.createId("TeamJaMa"))
+                .id(UUID.randomUUID())
                 .name("TeamJaMa")
                 .player1(player3)
                 .player2(player1)
@@ -172,7 +172,7 @@ class GameStartResourceTest extends BaseTest {
         final Player player2 = Player.from("Mia");
 
         final Team team1 = Team.builder()
-                .id(Team.createId("TeamMaMi"))
+                .id(UUID.randomUUID())
                 .name("TeamMaMi")
                 .player1(player1)
                 .player2(player2)
@@ -198,7 +198,7 @@ class GameStartResourceTest extends BaseTest {
         final Player player2 = Player.from("Mia");
 
         final Team team1 = Team.builder()
-                .id(Team.createId("TeamMaMi"))
+                .id(UUID.randomUUID())
                 .name("TeamMaMi")
                 .player1(player1)
                 .player2(player2)
@@ -225,7 +225,7 @@ class GameStartResourceTest extends BaseTest {
         final Player player2 = Player.from("Mia");
 
         final Team team1 = Team.builder()
-                .id(Team.createId("TeamMaMi"))
+                .id(UUID.randomUUID())
                 .name("TeamMaMi")
                 .player1(player1)
                 .player2(player2)
@@ -238,7 +238,7 @@ class GameStartResourceTest extends BaseTest {
         player4.setEnabled(false);
 
         final Team team2 = Team.builder()
-                .id(Team.createId("TeamJaMa"))
+                .id(UUID.randomUUID())
                 .name("TeamJaMa")
                 .player1(player3)
                 .player2(player4)

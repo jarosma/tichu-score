@@ -17,6 +17,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
@@ -103,7 +104,7 @@ class PlayerStatusResourceTest extends BaseTest {
     void disable_inEnabledTeam() {
         final Player player = Player.from("Marco");
         final Player other = Player.from("Mia");
-        persistTeam(player, other);
+        final Team team = persistTeam(player, other);
 
         given().contentType("application/json")
                 .body(new PlayerStatusRequest(false))
@@ -112,7 +113,7 @@ class PlayerStatusResourceTest extends BaseTest {
 
         final Player unchanged = playerRepository.findById(player.getId());
         Assertions.assertTrue(unchanged.isEnabled());
-        Assertions.assertTrue(teamRepository.findById(Team.createId("TeamMarco")).isEnabled());
+        Assertions.assertTrue(teamRepository.findById(team.getId()).isEnabled());
     }
 
     @Test
@@ -199,7 +200,7 @@ class PlayerStatusResourceTest extends BaseTest {
     @Transactional
     Team persistTeam(final Player player, final Player other) {
         final Team team = Team.builder()
-                .id(Team.createId("TeamMarco"))
+                .id(UUID.randomUUID())
                 .name("TeamMarco")
                 .player1(player)
                 .player2(other)

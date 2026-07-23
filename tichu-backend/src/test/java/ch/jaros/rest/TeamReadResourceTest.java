@@ -10,6 +10,8 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -63,7 +65,7 @@ class TeamReadResourceTest extends BaseTest {
         final Player disabled = Player.from("Marco");
         disabled.setEnabled(false);
         final Player active = Player.from("Mia");
-        final Team team = Team.builder().id(Team.createId("TeamMarco"))
+        final Team team = Team.builder().id(UUID.randomUUID())
                 .name("TeamMarco").player1(disabled).player2(active).build();
         persist(team);
 
@@ -92,7 +94,7 @@ class TeamReadResourceTest extends BaseTest {
     }
 
     static Team team(final String name, final String player1, final String player2) {
-        return Team.builder().id(Team.createId(name)).name(name)
+        return Team.builder().id(UUID.randomUUID()).name(name)
                 .player1(Player.from(player1)).player2(Player.from(player2)).build();
     }
 

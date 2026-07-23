@@ -43,9 +43,9 @@ class GameReadResourceTest extends BaseTest {
     @Test
     void spectateGame() {
         final Game game = persistGame(false);
-        game.getScores().addRound(10, 90);
-        game.getScores().addRound(50, 50);
-        game.getScores().addRound(-5, 105);
+        game.addRound(10, 90);
+        game.addRound(50, 50);
+        game.addRound(-5, 105);
         update(game);
 
         given().when().get("/games/" + game.getId())
@@ -96,7 +96,7 @@ class GameReadResourceTest extends BaseTest {
     Team persistTeam(final String name, final String firstName, final String secondName) {
         final Player first = Player.from(firstName);
         final Player second = Player.from(secondName);
-        final Team team = Team.builder().id(Team.createId(name)).name(name)
+        final Team team = Team.builder().id(UUID.randomUUID()).name(name)
                 .player1(first).player2(second).build();
         playerRepository.persist(first);
         playerRepository.persist(second);
