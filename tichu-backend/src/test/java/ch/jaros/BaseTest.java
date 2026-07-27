@@ -13,9 +13,9 @@ import org.junit.jupiter.api.BeforeEach;
 public abstract class BaseTest {
 
     @Inject
-    TeamRepository teamRepository;
+    protected TeamRepository teamRepository;
     @Inject
-    PlayerRepository playerRepository;
+    protected PlayerRepository playerRepository;
     @Inject
     GameRepository gameRepository;
     @Inject

@@ -5,33 +5,24 @@ import ch.jaros.rest.request.PlayerStatusRequest;
 import ch.jaros.BaseTest;
 import ch.jaros.entity.Player;
 import ch.jaros.entity.Team;
-import ch.jaros.repository.PlayerRepository;
-import ch.jaros.repository.TeamRepository;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.List;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 class PlayerStatusResourceTest extends BaseTest {
-
-    @Inject
-    PlayerRepository playerRepository;
-    @Inject
-    TeamRepository teamRepository;
 
     @BeforeEach
     @Transactional
@@ -39,67 +30,25 @@ class PlayerStatusResourceTest extends BaseTest {
         cleanUp();
     }
 
-    @Test
-    void disable() {
+    @ParameterizedTest(name = "{0} -> {1}")
+    @MethodSource("statusChanges")
+    void updateStatus_withoutTeam(final boolean initialStatus, final boolean requestedStatus) {
         final Player player = Player.from("Marco");
-        player.setEnabled(true);
+        player.setEnabled(initialStatus);
 
         transactionalPersist(player);
 
         given()
                 .contentType("application/json")
-                .body(new PlayerStatusRequest(false))
+                .body(new PlayerStatusRequest(requestedStatus))
                 .when().patch(String.format("/players/%s", player.getId()))
                 .then()
                 .statusCode(200);
 
         final Player finalPlayer = playerRepository.findById(player.getId());
-        Assertions.assertEquals(player.getId(), finalPlayer.getId());
-        Assertions.assertEquals("Marco", finalPlayer.getName());
-        Assertions.assertFalse(finalPlayer.isEnabled());
-
-    }
-
-    @Test
-    void enable() {
-        final Player player = Player.from("Marco");
-        player.setEnabled(false);
-
-        transactionalPersist(player);
-
-        given()
-                .contentType("application/json")
-                .body(new PlayerStatusRequest(true))
-                .when().patch(String.format("/players/%s", player.getId()))
-                .then()
-                .statusCode(200);
-
-        final Player finalPlayer = playerRepository.findById(player.getId());
-        Assertions.assertEquals(player.getId(), finalPlayer.getId());
-        Assertions.assertEquals("Marco", finalPlayer.getName());
-        Assertions.assertTrue(finalPlayer.isEnabled());
-    }
-
-
-    @Test
-    void disable_alreadyDisabled() {
-        final Player player = Player.from("Marco");
-        player.setEnabled(false);
-
-        transactionalPersist(player);
-
-        given()
-                .contentType("application/json")
-                .body(new PlayerStatusRequest(false))
-                .when().patch(String.format("/players/%s", player.getId()))
-                .then()
-                .statusCode(200);
-
-        final Player finalPlayer = playerRepository.findById(player.getId());
-        Assertions.assertEquals(player.getId(), finalPlayer.getId());
-        Assertions.assertEquals("Marco", finalPlayer.getName());
-        Assertions.assertFalse(finalPlayer.isEnabled());
-
+        assertEquals(player.getId(), finalPlayer.getId());
+        assertEquals("Marco", finalPlayer.getName());
+        assertEquals(requestedStatus, finalPlayer.isEnabled());
     }
 
     @Test
@@ -111,11 +60,13 @@ class PlayerStatusResourceTest extends BaseTest {
         given().contentType("application/json")
                 .body(new PlayerStatusRequest(false))
                 .when().patch("/players/" + player.getId())
-                .then().statusCode(409);
+                .then()
+                .statusCode(409)
+                .body(is("Player belongs to an enabled team"));
 
         final Player unchanged = playerRepository.findById(player.getId());
-        Assertions.assertTrue(unchanged.isEnabled());
-        Assertions.assertTrue(teamRepository.findById(team.getId()).isEnabled());
+        assertTrue(unchanged.isEnabled());
+        assertTrue(teamRepository.findById(team.getId()).isEnabled());
     }
 
     @Test
@@ -130,39 +81,47 @@ class PlayerStatusResourceTest extends BaseTest {
                 .when().patch("/players/" + player.getId())
                 .then().statusCode(200);
 
-        Assertions.assertFalse(playerRepository.findById(player.getId()).isEnabled());
+        assertFalse(playerRepository.findById(player.getId()).isEnabled());
+        assertFalse(teamRepository.findById(team.getId()).isEnabled());
     }
 
-    @Test
-    void disable_notFound() {
-        given()
-                .contentType("application/json")
-                .body(new PlayerStatusRequest(false))
-                .when().patch("/players/00000000-0000-0000-0000-000000000000")
-                .then()
-                .statusCode(404);
-    }
 
     @Test
-    void enable_alreadyEnabled() {
+    void enable_inEnabledTeam() {
         final Player player = Player.from("Marco");
-        player.setEnabled(true);
+        final Player other = Player.from("Mia");
+        final Team team = persistTeam(player, other);
 
-        transactionalPersist(player);
-
-        given()
-                .contentType("application/json")
+        given().contentType("application/json")
                 .body(new PlayerStatusRequest(true))
-                .when().patch(String.format("/players/%s", player.getId()))
+                .when().patch("/players/" + player.getId())
                 .then()
                 .statusCode(200);
 
-        final Player finalPlayer = playerRepository.findById(player.getId());
-        Assertions.assertTrue(finalPlayer.isEnabled());
+        final Player unchanged = playerRepository.findById(player.getId());
+        assertTrue(unchanged.isEnabled());
+        assertTrue(teamRepository.findById(team.getId()).isEnabled());
     }
 
     @Test
-    void enable_notFound() {
+    void enable_inDisabledTeam() {
+        final Player player = Player.from("Marco");
+        final Player other = Player.from("Mia");
+        final Team team = persistTeam(player, other);
+        disableTeam(team);
+
+        given().contentType("application/json")
+                .body(new PlayerStatusRequest(true))
+                .when().patch("/players/" + player.getId())
+                .then()
+                .statusCode(200);
+
+        assertTrue(playerRepository.findById(player.getId()).isEnabled());
+        assertFalse(teamRepository.findById(team.getId()).isEnabled());
+    }
+
+    @Test
+    void updateStatus_notFound() {
         given()
                 .contentType("application/json")
                 .body(new PlayerStatusRequest(true))
@@ -182,8 +141,22 @@ class PlayerStatusResourceTest extends BaseTest {
                 .then().statusCode(400);
 
         final Player unchanged = playerRepository.findById(player.getId());
-        Assertions.assertTrue(unchanged.isEnabled());
-        Assertions.assertEquals("Marco", unchanged.getName());
+        assertTrue(unchanged.isEnabled());
+        assertEquals("Marco", unchanged.getName());
+    }
+
+    @Test
+    void updateStatus_missingBody() {
+        final Player player = Player.from("Marco");
+        transactionalPersist(player);
+
+        given()
+                .contentType("application/json")
+                .when().patch("/players/" + player.getId())
+                .then()
+                .statusCode(400);
+
+        assertTrue(playerRepository.findById(player.getId()).isEnabled());
     }
 
     @Test
@@ -194,6 +167,15 @@ class PlayerStatusResourceTest extends BaseTest {
                 .then().statusCode(400);
     }
 
+    static Stream<Arguments> statusChanges() {
+        return Stream.of(
+                Arguments.of(true, false),
+                Arguments.of(false, true),
+                Arguments.of(true, true),
+                Arguments.of(false, false)
+        );
+    }
+
     @Transactional
     void transactionalPersist(final Player player){
         playerRepository.persist(player);
@@ -201,12 +183,7 @@ class PlayerStatusResourceTest extends BaseTest {
 
     @Transactional
     Team persistTeam(final Player player, final Player other) {
-        final Team team = Team.builder()
-                .id(UUID.randomUUID())
-                .name("TeamMarco")
-                .player1(player)
-                .player2(other)
-                .build();
+        final Team team = Team.create("TeamMarco", player, other);
         playerRepository.persist(player);
         playerRepository.persist(other);
         teamRepository.persist(team);
