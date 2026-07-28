@@ -4,11 +4,13 @@ services:
       context: tichu-frontend
       dockerfile: Dockerfile
       args:
-        TICHU_HOST_URL: $TICHU_HOST_URL
-        TICHU_BACKEND_PORT: 8080
-        TICHU_HOST_PORT: 81
+        TICHU_PUBLIC_URL: ${TICHU_PUBLIC_URL:-http://localhost:81}
+        TICHU_API_BASE_URL: /api
     ports:
       - "81:80"
+    depends_on:
+      backend:
+        condition: service_started
     restart: unless-stopped
 
   backend:
@@ -23,7 +25,10 @@ services:
       QUARKUS_DATASOURCE_PASSWORD: tichupassword
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://db:5432/tichu
       QUARKUS_PROFILE: prod
-#      QUARKUS_HTTP_CORS_ORIGINS: http://frontend:80
+      QUARKUS_HTTP_CORS_ORIGINS: ${TICHU_CORS_ORIGINS:-http://localhost:81}
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   db:
@@ -35,6 +40,11 @@ services:
       POSTGRES_DB: tichu
       POSTGRES_USER: tichuuser
       POSTGRES_PASSWORD: tichupassword
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tichuuser -d tichu"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     volumes:
       - tichu-db-data:/var/lib/postgresql/data
     restart: unless-stopped
