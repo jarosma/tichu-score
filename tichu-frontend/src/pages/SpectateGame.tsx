@@ -4,7 +4,7 @@ import { fetchGame, endGame } from "@/lib/api/Games";
 import type { Game } from "@/lib/Types";
 import { GameScore } from "@/components/game/GameScore";
 import { GameQrDialog } from "@/components/game/GameQrDialog";
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { getScoreUrl } from "@/lib/config";
 import { apiKeys } from "@/lib/api/keys";
@@ -52,6 +52,8 @@ export function SpectateGame({ newGame }: SpectateGameProps) {
   >(null);
   const [endError, setEndError] = useState<string | null>(null);
   const [isEnding, setIsEnding] = useState(false);
+  const endDialogOpenerRef = useRef<HTMLElement | null>(null);
+  const endHeadingRef = useRef<HTMLHeadingElement | null>(null);
 
   const {
     data: fetchedGame,
@@ -80,6 +82,7 @@ export function SpectateGame({ newGame }: SpectateGameProps) {
     const timer = setTimeout(() => {
       setPendingWinner(calculateWinner(game));
       setEndDialogMode("automatic");
+      endDialogOpenerRef.current = endHeadingRef.current;
       setIsEndDialogOpen(true);
     }, 0);
 
@@ -142,7 +145,12 @@ export function SpectateGame({ newGame }: SpectateGameProps) {
   return (
     <div className="relative flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
       <header className="shrink-0 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+        <h1
+          ref={endHeadingRef}
+          id="page-heading"
+          tabIndex={-1}
+          className="text-3xl font-semibold tracking-tight sm:text-4xl"
+        >
           Spiel anschauen
         </h1>
         <p className="mt-1 truncate text-sm text-muted-foreground sm:text-base">
@@ -169,7 +177,10 @@ export function SpectateGame({ newGame }: SpectateGameProps) {
           variant="ghost"
           size="sm"
           className="h-auto self-center px-2 py-1 text-xs font-normal text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
-          onClick={openManualEndDialog}
+          onClick={(event) => {
+            endDialogOpenerRef.current = event.currentTarget;
+            openManualEndDialog();
+          }}
           disabled={isEnding}
         >
           Spiel beenden
@@ -193,6 +204,7 @@ export function SpectateGame({ newGame }: SpectateGameProps) {
         confirmLabel={isEnding ? "Wird beendet ..." : "Spiel beenden"}
         onConfirm={confirmEndGame}
         destructive
+        openerRef={endDialogOpenerRef}
       />
     </div>
   );

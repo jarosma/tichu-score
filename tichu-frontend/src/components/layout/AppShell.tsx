@@ -15,6 +15,7 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
+import { focusIfConnected } from "@/lib/focus";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -29,17 +30,55 @@ const navigation = [
   { to: "/statistics", label: "Statistiken", icon: BarChart3 },
 ];
 
+function useRouteFocusManager() {
+  const location = useLocation();
+
+  useEffect(() => {
+    let cancelled = false;
+    const frame = window.requestAnimationFrame(() => {
+      if (cancelled) return;
+
+      const pageHeading = document.getElementById("page-heading");
+      const mainLandmark = document.getElementById("main-content");
+      if (!focusIfConnected(pageHeading)) focusIfConnected(mainLandmark);
+    });
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+    };
+  }, [location.hash, location.key, location.pathname, location.search]);
+}
+
+function findEnterPrimary(): HTMLElement | null {
+  return (
+    Array.from(
+      document.querySelectorAll<HTMLElement>('[data-enter-primary="true"]'),
+    ).find(
+      (element) =>
+        element.isConnected &&
+        !element.hasAttribute("disabled") &&
+        element.getAttribute("aria-hidden") !== "true" &&
+        !element.hidden &&
+        !element.closest("[hidden]") &&
+        window.getComputedStyle(element).display !== "none" &&
+        window.getComputedStyle(element).visibility !== "hidden",
+    ) ?? null
+  );
+}
+
 export function AppShell({ children }: AppShellProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const navigationType = useNavigationType();
   const historyKeys = useRef([location.key]);
-  const focusPrimaryAfterNavigation = useRef(false);
   const [canGoBack, setCanGoBack] = useState(false);
   const isScoreRoute = /^\/game\/[^/]+\/score$/.test(location.pathname);
   const isSpectateRoute = /^\/game\/[^/]+\/spectate$/.test(location.pathname);
   const isHomeRoute = location.pathname === "/";
   const isViewportRoute = isSpectateRoute || isHomeRoute;
+
+  useRouteFocusManager();
 
   useEffect(() => {
     if (navigationType === "PUSH") {
@@ -58,46 +97,33 @@ export function AppShell({ children }: AppShellProps) {
   }, [location.key, navigationType]);
 
   useEffect(() => {
-    if (!focusPrimaryAfterNavigation.current) return;
-
-    const frame = window.requestAnimationFrame(() => {
-      const primary = Array.from(
-        document.querySelectorAll<HTMLElement>('[data-enter-primary="true"]'),
-      ).find(
-        (element) =>
-          !element.hasAttribute("disabled") &&
-          element.getClientRects().length > 0,
-      );
-
-      if (primary) primary.focus();
-      focusPrimaryAfterNavigation.current = false;
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [location.key]);
-
-  useEffect(() => {
     function handleEnterShortcut(event: KeyboardEvent) {
-      if (event.key !== "Enter" || event.repeat) return;
+      if (
+        event.key !== "Enter" ||
+        event.repeat ||
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.shiftKey ||
+        event.metaKey
+      ) {
+        return;
+      }
 
-      const target = event.target as HTMLElement | null;
+      const target = event.target instanceof HTMLElement ? event.target : null;
       if (
         target?.matches(
           "input, textarea, select, button, a, [contenteditable='true']",
         ) ||
         target?.matches('[role="button"]') ||
+        target?.closest("form") ||
         target?.closest('[role="dialog"]')
       ) {
         return;
       }
 
-      const primary = Array.from(
-        document.querySelectorAll<HTMLElement>('[data-enter-primary="true"]'),
-      ).find(
-        (element) =>
-          !element.hasAttribute("disabled") &&
-          element.getClientRects().length > 0,
-      );
+      const primary = findEnterPrimary();
       if (!primary) return;
 
       event.preventDefault();
@@ -135,9 +161,6 @@ export function AppShell({ children }: AppShellProps) {
               key={to}
               to={to}
               end={end}
-              onClick={() => {
-                focusPrimaryAfterNavigation.current = true;
-              }}
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
@@ -191,9 +214,6 @@ export function AppShell({ children }: AppShellProps) {
               key={to}
               to={to}
               end={end}
-              onClick={() => {
-                focusPrimaryAfterNavigation.current = true;
-              }}
               className={({ isActive }) =>
                 cn(
                   "flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
@@ -210,6 +230,8 @@ export function AppShell({ children }: AppShellProps) {
         </nav>
 
         <main
+          id="main-content"
+          tabIndex={-1}
           className={cn(
             "mx-auto max-w-7xl",
             isViewportRoute

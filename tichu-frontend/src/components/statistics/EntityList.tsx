@@ -19,44 +19,42 @@ export function EntityList({ items, selectedId, onSelect }: EntityListProps) {
   return (
     <Card>
       <CardContent className="p-2">
-        <div
-          className="space-y-1"
-          role="listbox"
-          aria-label="Spieler und Teams"
-        >
+        <ul className="space-y-1" aria-label="Spieler und Teams">
           {items.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="option"
-              aria-selected={selectedId === item.id}
-              onClick={() => onSelect(item.id)}
-              className={cn(
-                "flex w-full items-start justify-between gap-3 rounded-lg p-3 text-left transition-colors",
-                selectedId === item.id
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-accent",
-              )}
-            >
-              <span className="min-w-0">
-                <span className="block truncate font-medium">{item.name}</span>
-                <span
-                  className={cn(
-                    "mt-1 block truncate text-xs",
-                    selectedId === item.id
-                      ? "text-primary-foreground/75"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  {item.description}
+            <li key={item.id}>
+              <button
+                type="button"
+                aria-pressed={selectedId === item.id}
+                onClick={() => onSelect(item.id)}
+                className={cn(
+                  "flex w-full items-start justify-between gap-3 rounded-lg p-3 text-left transition-colors",
+                  selectedId === item.id
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-accent",
+                )}
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-medium">
+                    {item.name}
+                  </span>
+                  <span
+                    className={cn(
+                      "mt-1 block truncate text-xs",
+                      selectedId === item.id
+                        ? "text-primary-foreground/75"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {item.description}
+                  </span>
+                  <span className="mt-2 block">
+                    <StatusBadge enabled={item.enabled} />
+                  </span>
                 </span>
-                <span className="mt-2 block">
-                  <StatusBadge enabled={item.enabled} />
-                </span>
-              </span>
-            </button>
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       </CardContent>
     </Card>
   );

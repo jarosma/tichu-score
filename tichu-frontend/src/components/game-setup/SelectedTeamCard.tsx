@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import type { SyntheticEvent } from "react";
 import type { Team } from "@/lib/Types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,7 +8,7 @@ interface SelectedTeamCardProps {
   slot: 1 | 2;
   team: Team | null;
   onClear: () => void;
-  onChange: () => void;
+  onChange: (event: SyntheticEvent<HTMLElement>) => void;
   enterPrimary?: boolean;
 }
 
@@ -32,7 +33,7 @@ export function SelectedTeamCard({
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            onChange();
+            onChange(event);
           }
         }}
       >
@@ -63,7 +64,10 @@ export function SelectedTeamCard({
           variant="ghost"
           size="icon"
           className="absolute top-3 right-3"
-          onClick={onClear}
+          onClick={(event) => {
+            event.stopPropagation();
+            onClear();
+          }}
           aria-label={`Team ${slot} entfernen`}
         >
           <X />

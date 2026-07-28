@@ -1,8 +1,15 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { SWRConfig } from "swr";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Player } from "@/lib/Types";
+import { ApiError } from "@/lib/api/client";
 import { PlayersPage } from "./PlayersPage";
 
 const mocks = vi.hoisted(() => ({
@@ -91,5 +98,28 @@ describe("PlayersPage mutations", () => {
     expect(
       screen.getByText("Es gibt derzeit keine deaktivierten Spieler."),
     ).toBeInTheDocument();
+  });
+
+  it("announces delete failures inside the active confirmation dialog", async () => {
+    mocks.fetchPlayers.mockResolvedValue([player]);
+    mocks.deletePlayer.mockRejectedValue(
+      new ApiError("Spieler wird noch verwendet.", 409),
+    );
+    renderPage();
+
+    await screen.findByText("Anna");
+    fireEvent.click(screen.getByRole("button", { name: "Löschen" }));
+    const deleteButtons = screen.getAllByRole("button", { name: "Löschen" });
+    fireEvent.click(deleteButtons[deleteButtons.length - 1]);
+
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() =>
+      expect(within(dialog).getByRole("alert")).toHaveTextContent(
+        "Spieler wird noch verwendet.",
+      ),
+    );
+    expect(
+      screen.queryByText("Spieler konnte nicht gelöscht werden."),
+    ).not.toBeInTheDocument();
   });
 });

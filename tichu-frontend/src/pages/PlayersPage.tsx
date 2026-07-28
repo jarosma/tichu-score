@@ -1,5 +1,5 @@
 import { BarChart3, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import useSWR, { mutate as mutateCache } from "swr";
 import { Link } from "react-router-dom";
 import {
@@ -29,10 +29,13 @@ export function PlayersPage() {
   const [filter, setFilter] = useState<Filter>("active");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
+  const createOpenerRef = useRef<HTMLElement | null>(null);
+  const deleteOpenerRef = useRef<HTMLElement | null>(null);
   const {
     data: players,
     error,
@@ -116,19 +119,21 @@ export function PlayersPage() {
     if (!playerToDelete) return;
     const player = playerToDelete;
     setErrorMessage(null);
+    setDeleteError(null);
     setSuccessMessage(null);
     setRefreshWarning(null);
     setIsMutating(true);
     try {
       await deletePlayer(player.id);
     } catch (reason) {
-      setErrorMessage(
+      setDeleteError(
         getApiErrorMessage(reason, "Spieler konnte nicht gelöscht werden."),
       );
       setIsMutating(false);
       return;
     }
     setPlayerToDelete(null);
+    setDeleteError(null);
     setSuccessMessage("Spieler wurde gelöscht.");
     await reconcilePlayerList((current) =>
       current.filter((candidate) => candidate.id !== player.id),
@@ -148,7 +153,10 @@ export function PlayersPage() {
         title="Spieler verwalten"
         actions={
           <Button
-            onClick={() => setIsCreateOpen(true)}
+            onClick={(event) => {
+              createOpenerRef.current = event.currentTarget;
+              setIsCreateOpen(true);
+            }}
             data-enter-primary="true"
           >
             <Plus />
@@ -260,7 +268,11 @@ export function PlayersPage() {
                       size="sm"
                       variant="destructive"
                       disabled={isMutating}
-                      onClick={() => setPlayerToDelete(player)}
+                      onClick={(event) => {
+                        deleteOpenerRef.current = event.currentTarget;
+                        setDeleteError(null);
+                        setPlayerToDelete(player);
+                      }}
                     >
                       <Trash2 />
                       Löschen
@@ -276,6 +288,7 @@ export function PlayersPage() {
       <PlayerFormDialog
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
+        openerRef={createOpenerRef}
         onCreated={(player) => {
           setSuccessMessage(`Spieler ${player.name} wurde erstellt.`);
           void reconcilePlayerList((current) => [...current, player]);
@@ -283,12 +296,19 @@ export function PlayersPage() {
       />
       <ConfirmDialog
         open={Boolean(playerToDelete)}
-        onOpenChange={(open) => !open && setPlayerToDelete(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPlayerToDelete(null);
+            setDeleteError(null);
+          }
+        }}
         title="Spieler löschen?"
         description={`Möchtest du ${playerToDelete?.name ?? "diesen Spieler"} wirklich löschen? Spieler aus vergangenen Spielen können nicht gelöscht werden.`}
         confirmLabel={isMutating ? "Wird gelöscht ..." : "Löschen"}
         onConfirm={handleDelete}
         destructive
+        error={deleteError}
+        openerRef={deleteOpenerRef}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import { Shuffle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Link,
   useLocation,
@@ -36,6 +36,8 @@ export function CreateGamePage() {
   const [startError, setStartError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [startKey, setStartKey] = useState<string | null>(null);
+  const pickerOpenerRef = useRef<HTMLElement | null>(null);
+  const quickStartOpenerRef = useRef<HTMLElement | null>(null);
 
   const {
     data: teams,
@@ -220,14 +222,20 @@ export function CreateGamePage() {
                 <SelectedTeamCard
                   slot={1}
                   team={team1}
-                  onChange={() => setPickerSlot(1)}
+                  onChange={(event) => {
+                    pickerOpenerRef.current = event.currentTarget;
+                    setPickerSlot(1);
+                  }}
                   onClear={() => clearTeam(1)}
                   enterPrimary={enterTarget === "team1"}
                 />
                 <SelectedTeamCard
                   slot={2}
                   team={team2}
-                  onChange={() => setPickerSlot(2)}
+                  onChange={(event) => {
+                    pickerOpenerRef.current = event.currentTarget;
+                    setPickerSlot(2);
+                  }}
                   onClear={() => clearTeam(2)}
                   enterPrimary={enterTarget === "team2"}
                 />
@@ -251,7 +259,10 @@ export function CreateGamePage() {
                 <Button
                   variant="secondary"
                   disabled={!canQuickStart}
-                  onClick={() => setIsQuickStartOpen(true)}
+                  onClick={(event) => {
+                    quickStartOpenerRef.current = event.currentTarget;
+                    setIsQuickStartOpen(true);
+                  }}
                 >
                   <Shuffle />
                   Zufällige Partie
@@ -300,29 +311,27 @@ export function CreateGamePage() {
           />
         )}
 
-      {pickerSlot !== null && (
-        <TeamPickerDialog
-          open
-          slot={pickerSlot}
-          teams={availableTeams}
-          selectedTeam={pickerSlot === 1 ? team1 : team2}
-          occupiedTeam={pickerSlot === 1 ? team2 : team1}
-          onOpenChange={(open) => !open && setPickerSlot(null)}
-          onSelect={(team) => {
-            selectTeam(pickerSlot, team);
-            setPickerSlot(null);
-          }}
-        />
-      )}
-      {isQuickStartOpen && (
-        <QuickStartDialog
-          open
-          players={activePlayers}
-          teams={availableTeams}
-          onOpenChange={setIsQuickStartOpen}
-          onComplete={handleQuickStartComplete}
-        />
-      )}
+      <TeamPickerDialog
+        open={pickerSlot !== null}
+        slot={pickerSlot ?? 1}
+        teams={availableTeams}
+        selectedTeam={pickerSlot === 1 ? team1 : team2}
+        occupiedTeam={pickerSlot === 1 ? team2 : team1}
+        openerRef={pickerOpenerRef}
+        onOpenChange={(open) => !open && setPickerSlot(null)}
+        onSelect={(team) => {
+          if (pickerSlot !== null) selectTeam(pickerSlot, team);
+          setPickerSlot(null);
+        }}
+      />
+      <QuickStartDialog
+        open={isQuickStartOpen}
+        players={activePlayers}
+        teams={availableTeams}
+        onOpenChange={setIsQuickStartOpen}
+        onComplete={handleQuickStartComplete}
+        openerRef={quickStartOpenerRef}
+      />
     </div>
   );
 }

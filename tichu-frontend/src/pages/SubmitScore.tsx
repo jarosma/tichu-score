@@ -248,7 +248,11 @@ export function SubmitScore() {
   }
 
   return (
-    <main className="h-[100dvh] overflow-hidden bg-background px-2 py-2 text-foreground sm:px-3 sm:py-4">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="h-[100dvh] overflow-hidden bg-background px-2 py-2 text-foreground sm:px-3 sm:py-4"
+    >
       <div className="mx-auto flex h-full min-h-0 w-full max-w-md flex-col gap-2">
         <header className="flex shrink-0 items-center justify-between px-1">
           <div>

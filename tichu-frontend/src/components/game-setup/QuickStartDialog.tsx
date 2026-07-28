@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Dices, Search, Users } from "lucide-react";
 import { mutate } from "swr";
 import type { Player, Team } from "@/lib/Types";
@@ -24,6 +24,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InlineMessage } from "@/components/feedback/InlineMessage";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  focusIfConnected,
+  focusRefIfConnected,
+  type FocusRef,
+} from "@/lib/focus";
 
 interface QuickStartDialogProps {
   open: boolean;
@@ -31,6 +36,7 @@ interface QuickStartDialogProps {
   teams: Team[];
   onOpenChange: (open: boolean) => void;
   onComplete: (team1: Team, team2: Team) => void;
+  openerRef?: FocusRef;
 }
 
 type Step = "players" | "pairing" | "create";
@@ -45,6 +51,7 @@ export function QuickStartDialog({
   teams,
   onOpenChange,
   onComplete,
+  openerRef,
 }: QuickStartDialogProps) {
   const [step, setStep] = useState<Step>("players");
   const [search, setSearch] = useState("");
@@ -54,6 +61,10 @@ export function QuickStartDialog({
   const [createdTeams, setCreatedTeams] = useState<Team[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const isCreatingRef = useRef(false);
+  const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const teamNameRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const [invalidTeamIndexes, setInvalidTeamIndexes] = useState<number[]>([]);
   const activePlayers = useMemo(
     () => players.filter((player) => player.enabled),
     [players],
@@ -82,6 +93,15 @@ export function QuickStartDialog({
   const missingIndexes = existingTeams
     .map((team, index) => (team ? -1 : index))
     .filter((index) => index >= 0);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      focusIfConnected(stepHeadingRef.current);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, step]);
 
   function togglePlayer(player: Player) {
     if (!hasEnoughPlayers) {
@@ -139,19 +159,28 @@ export function QuickStartDialog({
     }
   }
 
-  async function createMissingTeams() {
+  async function createMissingTeams(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isCreatingRef.current) return;
     if (!pairing) return;
     if (!hasEnoughPlayers) {
       setError("Für Quick Start brauchst du mindestens vier aktive Spieler.");
       return;
     }
     if (missingIndexes.some((index) => !teamNames[index].trim())) {
+      const invalidIndexes = missingIndexes.filter(
+        (index) => !teamNames[index].trim(),
+      );
+      setInvalidTeamIndexes(invalidIndexes);
       setError("Bitte gib für jedes neue Team einen Namen ein.");
+      focusIfConnected(teamNameRefs.current[invalidIndexes[0]] ?? null);
       return;
     }
 
     try {
       setError(null);
+      setInvalidTeamIndexes([]);
+      isCreatingRef.current = true;
       setIsCreating(true);
       const result = [...existingTeams] as [Team | null, Team | null];
       for (const index of missingIndexes) {
@@ -185,26 +214,34 @@ export function QuickStartDialog({
         ),
       );
     } finally {
+      isCreatingRef.current = false;
       setIsCreating(false);
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent
+        className="sm:max-w-xl"
+        onCloseAutoFocus={(event) => {
+          if (focusRefIfConnected(openerRef)) event.preventDefault();
+        }}
+      >
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle ref={stepHeadingRef} tabIndex={-1}>
             {step === "players"
               ? "Vier Spieler auswählen"
               : step === "pairing"
                 ? "Zufällige Teams"
                 : "Fehlende Teams erstellen"}
           </DialogTitle>
-          {step === "create" && (
-            <DialogDescription>
-              Diese Spieler-Kombinationen gibt es noch nicht als Teams.
-            </DialogDescription>
-          )}
+          <DialogDescription>
+            {step === "players"
+              ? "Wähle vier aktive Spieler für die Partie aus."
+              : step === "pairing"
+                ? "Prüfe die zufällige Aufteilung oder ändere die Spielerauswahl."
+                : "Diese Spieler-Kombinationen gibt es noch nicht als Teams."}
+          </DialogDescription>
         </DialogHeader>
 
         {!hasEnoughPlayers && (
@@ -213,7 +250,11 @@ export function QuickStartDialog({
             sind {activePlayers.length} aktiv.
           </InlineMessage>
         )}
-        {error && <InlineMessage variant="error">{error}</InlineMessage>}
+        {error && (
+          <InlineMessage id="quick-start-error" variant="error">
+            {error}
+          </InlineMessage>
+        )}
 
         {step === "players" && (
           <>
@@ -236,6 +277,7 @@ export function QuickStartDialog({
               <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <Input
                 className="pl-9"
+                aria-label="Spieler suchen"
                 placeholder="Spieler suchen ..."
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -279,25 +321,31 @@ export function QuickStartDialog({
         )}
 
         {step === "pairing" && pairing && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {pairing.map((pair, index) => (
-              <div key={index} className="rounded-xl border bg-card p-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                  Team {index + 1}
-                </p>
-                <p className="mt-2 font-semibold">{playerPairLabel(pair)}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {existingTeams[index]
-                    ? `Vorhanden: ${existingTeams[index]!.name}`
-                    : "Neues Team erforderlich"}
-                </p>
-              </div>
-            ))}
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Die vier ausgewählten Spieler bleiben erhalten. Du kannst sie
+              ändern, bevor du die Teams übernimmst.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {pairing.map((pair, index) => (
+                <div key={index} className="rounded-xl border bg-card p-4">
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                    Team {index + 1}
+                  </p>
+                  <p className="mt-2 font-semibold">{playerPairLabel(pair)}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {existingTeams[index]
+                      ? `Vorhanden: ${existingTeams[index]!.name}`
+                      : "Neues Team erforderlich"}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {step === "create" && pairing && (
-          <div className="space-y-4">
+          <form className="space-y-4" noValidate onSubmit={createMissingTeams}>
             {pairing.map((pair, index) =>
               existingTeams[index] ? (
                 <div key={index} className="rounded-xl border bg-muted/30 p-4">
@@ -312,46 +360,32 @@ export function QuickStartDialog({
                     Team für {playerPairLabel(pair)}
                   </Label>
                   <Input
+                    ref={(element) => {
+                      teamNameRefs.current[index] = element;
+                    }}
                     id={`quick-team-name-${index}`}
                     value={teamNames[index]}
+                    required
+                    aria-invalid={invalidTeamIndexes.includes(index)}
+                    aria-describedby={error ? "quick-start-error" : undefined}
                     onChange={(event) => {
                       const nextNames = [...teamNames] as [string, string];
                       nextNames[index] = event.target.value;
                       setTeamNames(nextNames);
+                      if (event.target.value.trim()) {
+                        setInvalidTeamIndexes((previous) =>
+                          previous.filter(
+                            (invalidIndex) => invalidIndex !== index,
+                          ),
+                        );
+                      }
                     }}
                     autoFocus={index === missingIndexes[0]}
                   />
                 </div>
               ),
             )}
-          </div>
-        )}
-
-        <DialogFooter>
-          {step === "players" ? (
-            <Button
-              type="button"
-              disabled={selectedPlayers.length !== 4 || !hasEnoughPlayers}
-              onClick={() => {
-                if (pairing) setStep("pairing");
-              }}
-            >
-              Teams aufteilen
-            </Button>
-          ) : step === "pairing" ? (
-            <>
-              <Button type="button" variant="outline" onClick={reshuffle}>
-                <Dices />
-                Neu mischen
-              </Button>
-              <Button type="button" onClick={continueWithPairing}>
-                {missingIndexes.length > 0
-                  ? "Fehlende Teams erstellen"
-                  : "Teams übernehmen"}
-              </Button>
-            </>
-          ) : (
-            <>
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
@@ -359,16 +393,47 @@ export function QuickStartDialog({
               >
                 Zurück
               </Button>
-              <Button
-                type="button"
-                disabled={isCreating}
-                onClick={() => void createMissingTeams()}
-              >
+              <Button type="submit" disabled={isCreating}>
                 {isCreating ? "Teams werden erstellt ..." : "Teams erstellen"}
               </Button>
-            </>
-          )}
-        </DialogFooter>
+            </DialogFooter>
+          </form>
+        )}
+
+        {step !== "create" && (
+          <DialogFooter>
+            {step === "players" ? (
+              <Button
+                type="button"
+                disabled={selectedPlayers.length !== 4 || !hasEnoughPlayers}
+                onClick={() => {
+                  if (pairing) setStep("pairing");
+                }}
+              >
+                Teams aufteilen
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep("players")}
+                >
+                  Spieler ändern
+                </Button>
+                <Button type="button" variant="outline" onClick={reshuffle}>
+                  <Dices />
+                  Neu mischen
+                </Button>
+                <Button type="button" onClick={continueWithPairing}>
+                  {missingIndexes.length > 0
+                    ? "Fehlende Teams erstellen"
+                    : "Teams übernehmen"}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

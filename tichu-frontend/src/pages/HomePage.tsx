@@ -31,7 +31,11 @@ export function HomePage() {
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col gap-6 px-2 py-2 sm:gap-8 sm:px-4 sm:py-3 lg:px-6 lg:py-4">
       <section className="shrink-0 text-center">
-        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+        <h1
+          id="page-heading"
+          tabIndex={-1}
+          className="text-4xl font-semibold tracking-tight sm:text-5xl"
+        >
           Tichu
         </h1>
       </section>

@@ -7,11 +7,8 @@ interface StatisticsTabsProps {
 
 export function StatisticsTabs({ value, onChange }: StatisticsTabsProps) {
   return (
-    <div
-      className="flex gap-1 border-b"
-      role="tablist"
-      aria-label="Statistiktyp"
-    >
+    <fieldset className="flex gap-1 border-b">
+      <legend className="sr-only">Statistiktyp</legend>
       {(
         [
           ["players", "Spieler"],
@@ -21,8 +18,7 @@ export function StatisticsTabs({ value, onChange }: StatisticsTabsProps) {
         <button
           key={tab}
           type="button"
-          role="tab"
-          aria-selected={value === tab}
+          aria-pressed={value === tab}
           onClick={() => onChange(tab)}
           className={cn(
             "border-b-2 px-4 py-3 text-sm font-medium transition-colors",
@@ -34,6 +30,6 @@ export function StatisticsTabs({ value, onChange }: StatisticsTabsProps) {
           {label}
         </button>
       ))}
-    </div>
+    </fieldset>
   );
 }

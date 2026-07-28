@@ -1,8 +1,15 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { SWRConfig } from "swr";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Player, Team } from "@/lib/Types";
+import { ApiError } from "@/lib/api/client";
 import { TeamsPage } from "./TeamsPage";
 
 const mocks = vi.hoisted(() => ({
@@ -87,5 +94,26 @@ describe("TeamsPage", () => {
     expect(
       screen.getByRole("button", { name: "Filter zurücksetzen" }),
     ).toBeInTheDocument();
+  });
+
+  it("keeps team delete failures in the confirmation dialog", async () => {
+    mocks.fetchTeams.mockResolvedValue([team]);
+    mocks.fetchPlayers.mockResolvedValue([player1, player2]);
+    mocks.deleteTeam.mockRejectedValue(
+      new ApiError("Team wird noch verwendet.", 409),
+    );
+    renderPage();
+
+    await screen.findByText("Duo");
+    fireEvent.click(screen.getByRole("button", { name: "Löschen" }));
+    const deleteButtons = screen.getAllByRole("button", { name: "Löschen" });
+    fireEvent.click(deleteButtons[deleteButtons.length - 1]);
+
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() =>
+      expect(within(dialog).getByRole("alert")).toHaveTextContent(
+        "Team wird noch verwendet.",
+      ),
+    );
   });
 });

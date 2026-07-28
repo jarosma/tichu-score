@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { InlineMessage } from "@/components/feedback/InlineMessage";
+import { focusRefIfConnected, type FocusRef } from "@/lib/focus";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -18,6 +20,8 @@ interface ConfirmDialogProps {
   confirmLabel: string;
   onConfirm: () => void | Promise<void>;
   destructive?: boolean;
+  error?: string | null;
+  openerRef?: FocusRef;
 }
 
 export function ConfirmDialog({
@@ -28,6 +32,8 @@ export function ConfirmDialog({
   confirmLabel,
   onConfirm,
   destructive = false,
+  error = null,
+  openerRef,
 }: ConfirmDialogProps) {
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -42,11 +48,20 @@ export function ConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent
+        onCloseAutoFocus={(event) => {
+          if (focusRefIfConnected(openerRef)) event.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        {error && (
+          <InlineMessage id="confirm-dialog-error" variant="error">
+            {error}
+          </InlineMessage>
+        )}
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline" disabled={isConfirming}>

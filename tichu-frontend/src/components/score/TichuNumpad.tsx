@@ -97,6 +97,15 @@ export function TichuNumpad({
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (scoreInputDisabled || isSubmitting) return;
+      const target = e.target;
+      const activeElement = document.activeElement;
+      if (
+        (target instanceof Element && target.closest('[role="dialog"]')) ||
+        (activeElement instanceof Element &&
+          activeElement.closest('[role="dialog"]'))
+      ) {
+        return;
+      }
       if (e.key >= "1" && e.key <= "9") addDigit(e.key);
       else if (e.key === "0") addDigit("0");
     }

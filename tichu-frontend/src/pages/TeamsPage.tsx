@@ -1,5 +1,5 @@
 import { BarChart3, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import useSWR from "swr";
 import { Link } from "react-router-dom";
 import { deleteTeam, fetchTeams, updateTeamStatus } from "@/lib/api/Teams";
@@ -26,10 +26,13 @@ export function TeamsPage() {
   const [filter, setFilter] = useState<Filter>("active");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
+  const createOpenerRef = useRef<HTMLElement | null>(null);
+  const deleteOpenerRef = useRef<HTMLElement | null>(null);
   const {
     data: teams,
     error: teamsError,
@@ -83,6 +86,7 @@ export function TeamsPage() {
 
   async function handleStatus(team: Team) {
     setErrorMessage(null);
+    setDeleteError(null);
     setSuccessMessage(null);
     setRefreshWarning(null);
     setIsMutating(true);
@@ -110,19 +114,21 @@ export function TeamsPage() {
     if (!teamToDelete) return;
     const team = teamToDelete;
     setErrorMessage(null);
+    setDeleteError(null);
     setSuccessMessage(null);
     setRefreshWarning(null);
     setIsMutating(true);
     try {
       await deleteTeam(team.id);
     } catch (reason) {
-      setErrorMessage(
+      setDeleteError(
         getApiErrorMessage(reason, "Team konnte nicht gelöscht werden."),
       );
       setIsMutating(false);
       return;
     }
     setTeamToDelete(null);
+    setDeleteError(null);
     setSuccessMessage("Team wurde gelöscht.");
     await reconcileTeamList((current) =>
       current.filter((candidate) => candidate.id !== team.id),
@@ -140,7 +146,10 @@ export function TeamsPage() {
         title="Teams verwalten"
         actions={
           <Button
-            onClick={() => setIsCreateOpen(true)}
+            onClick={(event) => {
+              createOpenerRef.current = event.currentTarget;
+              setIsCreateOpen(true);
+            }}
             disabled={!canCreateTeam}
             data-enter-primary="true"
           >
@@ -275,7 +284,11 @@ export function TeamsPage() {
                       size="sm"
                       variant="destructive"
                       disabled={isMutating}
-                      onClick={() => setTeamToDelete(team)}
+                      onClick={(event) => {
+                        deleteOpenerRef.current = event.currentTarget;
+                        setDeleteError(null);
+                        setTeamToDelete(team);
+                      }}
                     >
                       <Trash2 />
                       Löschen
@@ -292,6 +305,7 @@ export function TeamsPage() {
         open={isCreateOpen}
         players={activePlayers}
         onOpenChange={setIsCreateOpen}
+        openerRef={createOpenerRef}
         onCreated={(team) => {
           setSuccessMessage(`Team ${team.name} wurde erstellt.`);
           void reconcileTeamList((current) => [...current, team]);
@@ -299,12 +313,19 @@ export function TeamsPage() {
       />
       <ConfirmDialog
         open={Boolean(teamToDelete)}
-        onOpenChange={(open) => !open && setTeamToDelete(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTeamToDelete(null);
+            setDeleteError(null);
+          }
+        }}
         title="Team löschen?"
         description={`Möchtest du ${teamToDelete?.name ?? "dieses Team"} wirklich löschen? Teams aus vergangenen Spielen können nicht gelöscht werden.`}
         confirmLabel={isMutating ? "Wird gelöscht ..." : "Löschen"}
         onConfirm={handleDelete}
         destructive
+        error={deleteError}
+        openerRef={deleteOpenerRef}
       />
     </div>
   );

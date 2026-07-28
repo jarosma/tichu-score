@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,21 +15,29 @@ import { InlineMessage } from "@/components/feedback/InlineMessage";
 import { createPlayer } from "@/lib/api/Players";
 import { getApiErrorMessage } from "@/lib/api/client";
 import type { Player } from "@/lib/Types";
+import {
+  focusIfConnected,
+  focusRefIfConnected,
+  type FocusRef,
+} from "@/lib/focus";
 
 interface PlayerFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (player: Player) => void;
+  openerRef?: FocusRef;
 }
 
 export function PlayerFormDialog({
   open,
   onOpenChange,
   onCreated,
+  openerRef,
 }: PlayerFormDialogProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
 
   function close() {
     setName("");
@@ -41,10 +50,12 @@ export function PlayerFormDialog({
     const trimmedName = name.trim();
     if (!trimmedName) {
       setError("Bitte gib einen Namen ein.");
+      focusIfConnected(nameInputRef.current);
       return;
     }
     if (trimmedName.length > 64) {
       setError("Der Name darf maximal 64 Zeichen enthalten.");
+      focusIfConnected(nameInputRef.current);
       return;
     }
 
@@ -65,21 +76,33 @@ export function PlayerFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && close()}>
-      <DialogContent>
+      <DialogContent
+        onCloseAutoFocus={(event) => {
+          if (focusRefIfConnected(openerRef)) event.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Spieler erstellen</DialogTitle>
           <DialogDescription>
             Der Spieler kann anschließend für neue Teams verwendet werden.
           </DialogDescription>
         </DialogHeader>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          {error && <InlineMessage variant="error">{error}</InlineMessage>}
+        <form className="space-y-4" noValidate onSubmit={handleSubmit}>
+          {error && (
+            <InlineMessage id="player-form-error" variant="error">
+              {error}
+            </InlineMessage>
+          )}
           <div className="space-y-2">
             <Label htmlFor="player-name">Name</Label>
             <Input
+              ref={nameInputRef}
               id="player-name"
               value={name}
               maxLength={64}
+              required
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "player-form-error" : undefined}
               onChange={(event) => setName(event.target.value)}
               autoFocus
             />

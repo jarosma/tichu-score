@@ -1,6 +1,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -8,8 +9,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { QrCode } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { InlineMessage } from "@/components/feedback/InlineMessage";
+import { focusIfConnected } from "@/lib/focus";
 
 interface GameQrDialogProps {
   submitScoreUrl: string;
@@ -18,6 +20,8 @@ interface GameQrDialogProps {
 export function GameQrDialog({ submitScoreUrl }: GameQrDialogProps) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   async function copyLink() {
     try {
@@ -34,6 +38,7 @@ export function GameQrDialog({ submitScoreUrl }: GameQrDialogProps) {
     <Dialog>
       <DialogTrigger asChild>
         <Button
+          ref={triggerRef}
           size="icon"
           className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
           aria-label="Punkteingabe per QR-Code öffnen"
@@ -45,17 +50,19 @@ export function GameQrDialog({ submitScoreUrl }: GameQrDialogProps) {
 
       <DialogContent
         className="sm:max-w-md text-center"
+        closeButtonRef={closeButtonRef}
         onOpenAutoFocus={(event) => {
-          event.preventDefault();
-          window.requestAnimationFrame(() => {
-            document
-              .querySelector<HTMLElement>('[data-slot="dialog-close"]')
-              ?.focus();
-          });
+          if (focusIfConnected(closeButtonRef.current)) event.preventDefault();
+        }}
+        onCloseAutoFocus={(event) => {
+          if (focusIfConnected(triggerRef.current)) event.preventDefault();
         }}
       >
         <DialogHeader>
           <DialogTitle>Punkteingabe öffnen</DialogTitle>
+          <DialogDescription>
+            Scanne den QR-Code oder kopiere den Link zur mobilen Punkteingabe.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex justify-center py-6">

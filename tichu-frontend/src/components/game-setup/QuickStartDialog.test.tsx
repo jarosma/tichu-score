@@ -54,6 +54,89 @@ function renderDialog(nextPlayers = players, onComplete = vi.fn()) {
 }
 
 describe("QuickStartDialog", () => {
+  it("focuses each new step and keeps the player selection editable", async () => {
+    renderDialog();
+
+    for (const player of players) {
+      fireEvent.click(screen.getByRole("button", { name: player.name }));
+    }
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Zufällige Teams" }),
+      ).toHaveFocus(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Spieler ändern" }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Vier Spieler auswählen" }),
+      ).toHaveFocus(),
+    );
+    for (const player of players) {
+      expect(screen.getByRole("button", { name: player.name })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    }
+  });
+
+  it("submits team names through the form and prevents duplicate requests", async () => {
+    mocks.createTeam.mockImplementation(async (request: TeamCreateRequest) =>
+      makeTeam(request, `team-${mocks.createTeam.mock.calls.length}`),
+    );
+    renderDialog();
+
+    for (const player of players) {
+      fireEvent.click(screen.getByRole("button", { name: player.name }));
+    }
+    fireEvent.click(
+      screen.getByRole("button", { name: "Fehlende Teams erstellen" }),
+    );
+
+    const nameInputs = screen.getAllByRole("textbox");
+    fireEvent.change(nameInputs[0], { target: { value: "Team Alpha" } });
+    fireEvent.change(nameInputs[1], { target: { value: "Team Beta" } });
+    const form = screen
+      .getByRole("button", { name: "Teams erstellen" })
+      .closest("form");
+    expect(form).not.toBeNull();
+
+    fireEvent.submit(form!);
+    fireEvent.submit(form!);
+
+    await waitFor(() => expect(mocks.createTeam).toHaveBeenCalledTimes(2));
+  });
+
+  it("associates empty team names with an announced error and focuses the first field", async () => {
+    renderDialog();
+
+    for (const player of players) {
+      fireEvent.click(screen.getByRole("button", { name: player.name }));
+    }
+    fireEvent.click(
+      screen.getByRole("button", { name: "Fehlende Teams erstellen" }),
+    );
+    const firstNameInput = screen.getAllByRole("textbox")[0];
+    const secondNameInput = screen.getAllByRole("textbox")[1];
+    fireEvent.change(firstNameInput, { target: { value: "" } });
+    fireEvent.change(secondNameInput, { target: { value: "" } });
+    const form = firstNameInput.closest("form");
+    fireEvent.submit(form!);
+
+    await waitFor(() => {
+      expect(firstNameInput).toHaveAttribute("aria-invalid", "true");
+      expect(firstNameInput).toHaveAttribute(
+        "aria-describedby",
+        "quick-start-error",
+      );
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Bitte gib für jedes neue Team einen Namen ein.",
+      );
+      expect(firstNameInput).toHaveFocus();
+    });
+  });
+
   it("retains a partially created team and reuses it on retry", async () => {
     mocks.createTeam
       .mockImplementationOnce(async (request: TeamCreateRequest) =>

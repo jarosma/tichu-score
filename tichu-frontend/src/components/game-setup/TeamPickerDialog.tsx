@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { areTeamsCompatible } from "@/lib/gameSetup";
+import { focusRefIfConnected, type FocusRef } from "@/lib/focus";
 
 interface TeamPickerDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ interface TeamPickerDialogProps {
   occupiedTeam: Team | null;
   onOpenChange: (open: boolean) => void;
   onSelect: (team: Team) => void;
+  openerRef?: FocusRef;
 }
 
 export function TeamPickerDialog({
@@ -31,6 +33,7 @@ export function TeamPickerDialog({
   occupiedTeam,
   onOpenChange,
   onSelect,
+  openerRef,
 }: TeamPickerDialogProps) {
   const [search, setSearch] = useState("");
 
@@ -49,7 +52,12 @@ export function TeamPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent
+        className="sm:max-w-xl"
+        onCloseAutoFocus={(event) => {
+          if (focusRefIfConnected(openerRef)) event.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Team {slot} auswählen</DialogTitle>
           <DialogDescription>
@@ -59,9 +67,9 @@ export function TeamPickerDialog({
         <div className="relative">
           <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
-            aria-label="Team suchen"
+            aria-label="Team oder Spieler suchen"
             className="pl-9"
-            placeholder="Team suchen ..."
+            placeholder="Team oder Spieler suchen ..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             onKeyDown={(event) => {
