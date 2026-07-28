@@ -4,7 +4,7 @@ services:
       context: tichu-frontend
       dockerfile: Dockerfile
       args:
-        TICHU_PUBLIC_URL: ${TICHU_PUBLIC_URL:-http://localhost:81}
+        TICHU_PUBLIC_URL: ${TICHU_PUBLIC_URL:-}
         TICHU_API_BASE_URL: /api
     ports:
       - "81:80"

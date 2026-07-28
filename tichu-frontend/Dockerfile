@@ -2,12 +2,12 @@
 FROM node:22 AS build
 
 # Define build arguments for browser configuration
-ARG TICHU_PUBLIC_URL=http://localhost:81
+ARG TICHU_PUBLIC_URL=
 ARG TICHU_API_BASE_URL=/api
 
 # Set Vite variables during the build process
-ENV VITE_PUBLIC_URL=$TICHU_PUBLIC_URL
-ENV VITE_API_BASE_URL=$TICHU_API_BASE_URL
+ENV VITE_PUBLIC_URL=${TICHU_PUBLIC_URL}
+ENV VITE_API_BASE_URL=${TICHU_API_BASE_URL}
 
 WORKDIR /app
 
