@@ -48,15 +48,20 @@ public class GameService {
     }
 
     @Transactional
-    public Game getById(final UUID gameId) {
+    public Game findById(final UUID gameId) {
         final Game game = gameRepository.findById(gameId);
         if (game == null) throw new GameDoesNotExistException("Game does not exist");
         return game;
     }
 
     @Transactional
+    public List<Game> findOngoing() {
+        return gameRepository.findOngoingGames();
+    }
+
+    @Transactional
     public Game end(final UUID gameId, final ch.jaros.entity.GameWinner winner) {
-        final Game game = getById(gameId);
+        final Game game = findById(gameId);
         if (!game.getHasEnded()) {
             game.endGame(winner);
             statsService.updateForCompletedGame(game);

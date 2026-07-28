@@ -44,11 +44,6 @@ public class Team {
     @JsonIgnore
     private TeamStats teamStats;
 
-    @PrePersist
-    void initializeStats() {
-        if (teamStats == null) setTeamStats(TeamStats.create(this));
-    }
-
     public static UUID createId() {
         return UUID.randomUUID();
     }
@@ -63,6 +58,13 @@ public class Team {
 
         team.setTeamStats(TeamStats.create(team));
         return team;
+    }
+
+    @PrePersist
+    void initializeStats() {
+        if (teamStats == null) {
+            setTeamStats(TeamStats.create(this));
+        }
     }
 
     public boolean isEnabled() {

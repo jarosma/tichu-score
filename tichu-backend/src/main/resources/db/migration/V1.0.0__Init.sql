@@ -1,4 +1,4 @@
-CREATE TYPE game_winner AS ENUM ('team1', 'team2');
+CREATE TYPE game_winner AS ENUM ('team1', 'team2', 'draw');
 
 CREATE TABLE player_stats (
     id UUID PRIMARY KEY,

@@ -6,5 +6,6 @@ import jakarta.persistence.Table;
 @Table(name = "game_winner")
 public enum GameWinner {
     team1,
-    team2
+    team2,
+    draw
 }

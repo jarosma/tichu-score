@@ -38,7 +38,12 @@ public class GameResource {
     @Path("/{gameId}")
     public Response getGame(@PathParam("gameId") final String gameIdValue) {
         final UUID gameId = PathUuid.parse(gameIdValue);
-        return Response.ok(GameResponse.from(gameService.getById(gameId))).build();
+        return Response.ok(GameResponse.from(gameService.findById(gameId))).build();
+    }
+
+    @GET
+    public Response getGames() {
+        return Response.ok(gameService.findOngoing().stream().map(GameResponse::from).toList()).build();
     }
 
     @POST

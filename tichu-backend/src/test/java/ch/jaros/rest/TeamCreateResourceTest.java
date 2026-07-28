@@ -135,6 +135,26 @@ class TeamCreateResourceTest extends BaseTest {
     }
 
     @Test
+    void create_disabledPlayer() {
+        final Player player1 = Player.from("Marco");
+        player1.setEnabled(false);
+        transactionalPersist(player1);
+        final Player player2 = Player.from("Mia");
+        transactionalPersist(player2);
+
+        final TeamCreateRequest request = new TeamCreateRequest("TeamMarco", player1.getId(), player2.getId());
+
+        given()
+                .contentType("application/json")
+                .body(request)
+                .when().post("/teams")
+                .then()
+                .statusCode(409);
+
+        assertEquals(0, teamRepository.count());
+    }
+
+    @Test
     void create_missingBody() {
         given()
                 .contentType("application/json")

@@ -14,3 +14,11 @@ Configure those ENV-vars:
 - Have Docker with docker compose installed.
 - Start `StartTichuCounter.sh` 
 - Find out the rest your selfe it's not that hard :D
+## API
+
+Die Spiel-Endpunkte sind unter `/games` verfügbar:
+
+- `GET /games`: Gibt alle laufenden Spiele zurück.
+- `GET /games/{gameId}`: Gibt ein einzelnes Spiel zurück.
+- `POST /games`: Startet ein neues Spiel.
+- `POST /games/{gameId}/end`: Beendet ein Spiel.

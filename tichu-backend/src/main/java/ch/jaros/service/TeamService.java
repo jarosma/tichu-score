@@ -48,6 +48,9 @@ public class TeamService {
         final Player player2 = playerRepository.findById(player2Id);
         if (player2 == null) throw new PlayerDoesNotExistException("Player 2 does not exist");
         if (player1 == player2) throw new PlayersNotDistinctException();
+        if (!player1.isEnabled() || !player2.isEnabled()) {
+            throw new EntityConflictException("Team has a disabled player");
+        }
 
         final Team team = Team.create(name, player1, player2);
         teamRepository.persist(team);

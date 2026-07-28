@@ -21,6 +21,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 @QuarkusTest
 class GameReadResourceTest extends BaseTest {
@@ -90,6 +91,30 @@ class GameReadResourceTest extends BaseTest {
     void spectateGame_invalidId() {
         given().when().get("/games/invalidUUID")
                 .then().statusCode(400);
+    }
+
+    @Test
+    void getOngoingGames() {
+        final Game ongoingGame = persistGame(false);
+        persistGame(true);
+
+        given().when().get("/games")
+                .then().statusCode(200)
+                .body("size()", is(1))
+                .body("id", containsInAnyOrder(ongoingGame.getId().toString()))
+                .body("hasEnded", containsInAnyOrder(false))
+                .body("endedAt", containsInAnyOrder(nullValue()))
+                .body("team1.id", containsInAnyOrder(team1.getId().toString()))
+                .body("team2.id", containsInAnyOrder(team2.getId().toString()));
+    }
+
+    @Test
+    void getOngoingGames_empty() {
+        persistGame(true);
+
+        given().when().get("/games")
+                .then().statusCode(200)
+                .body("size()", is(0));
     }
 
     @Transactional

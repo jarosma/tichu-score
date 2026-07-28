@@ -32,11 +32,6 @@ public class Player {
     @JsonIgnore
     private PlayerStats playerStats;
 
-    @PrePersist
-    void initializeStats() {
-        if (playerStats == null) setPlayerStats(PlayerStats.create(this));
-    }
-
     public static Player create(final String name) {
         final Player player = Player.builder()
                 .id(UUID.randomUUID())
