@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InlineMessage } from "@/components/feedback/InlineMessage";
 import { createTeam } from "@/lib/api/Teams";
+import { getApiErrorMessage } from "@/lib/api/client";
 import type { Player, Team } from "@/lib/Types";
 
 interface TeamFormDialogProps {
@@ -69,9 +70,7 @@ export function TeamFormDialog({
       close();
     } catch (reason) {
       setError(
-        reason instanceof Error
-          ? reason.message
-          : "Team konnte nicht erstellt werden.",
+        getApiErrorMessage(reason, "Team konnte nicht erstellt werden."),
       );
     } finally {
       setIsSubmitting(false);

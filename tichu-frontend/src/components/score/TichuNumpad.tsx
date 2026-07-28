@@ -13,6 +13,7 @@ interface TichuNumpadProps {
   replaceNextInput?: boolean;
   onInputConsumed?: () => void;
   disabled?: boolean;
+  disableScoreInput?: boolean;
   isSubmitting?: boolean;
 }
 
@@ -30,8 +31,11 @@ export function TichuNumpad({
   replaceNextInput = false,
   onInputConsumed,
   disabled = false,
+  disableScoreInput = false,
   isSubmitting = false,
 }: TichuNumpadProps) {
+  const scoreInputDisabled = disabled || disableScoreInput;
+
   const addDigit = useCallback(
     (digit: string) => {
       function updateOther(score: number) {
@@ -92,14 +96,14 @@ export function TichuNumpad({
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (disabled || isSubmitting) return;
+      if (scoreInputDisabled || isSubmitting) return;
       if (e.key >= "1" && e.key <= "9") addDigit(e.key);
       else if (e.key === "0") addDigit("0");
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [addDigit, disabled, isSubmitting]);
+  }, [addDigit, isSubmitting, scoreInputDisabled]);
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-1">
@@ -109,7 +113,7 @@ export function TichuNumpad({
             key={k}
             variant="outline"
             className="h-full min-h-9 text-xl sm:min-h-12"
-            disabled={disabled}
+            disabled={scoreInputDisabled || isSubmitting}
             onClick={() => addDigit(k)}
           >
             {k}
@@ -119,7 +123,7 @@ export function TichuNumpad({
           variant="outline"
           className="h-full min-h-9 sm:min-h-12"
           onClick={onNegative}
-          disabled={disabled}
+          disabled={scoreInputDisabled || isSubmitting}
         >
           -
         </Button>
@@ -127,7 +131,7 @@ export function TichuNumpad({
           variant="outline"
           className="h-full min-h-9 text-xl sm:min-h-12"
           onClick={() => addDigit("0")}
-          disabled={disabled}
+          disabled={scoreInputDisabled || isSubmitting}
         >
           0
         </Button>
@@ -135,7 +139,7 @@ export function TichuNumpad({
           variant="outline"
           className="h-full min-h-9 border-destructive/40 text-destructive hover:bg-destructive/10 sm:min-h-12"
           onClick={onClear}
-          disabled={isSubmitting}
+          disabled={disabled || isSubmitting}
         >
           <span className="text-xs">Löschen</span>
         </Button>
@@ -144,7 +148,7 @@ export function TichuNumpad({
         variant="outline"
         className="h-9 shrink-0 text-sm"
         onClick={handleBonusClick}
-        disabled={isSubmitting}
+        disabled={disabled || isSubmitting}
       >
         Doppel-Sieg
       </Button>

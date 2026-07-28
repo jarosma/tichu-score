@@ -18,6 +18,10 @@ import { Button } from "@/components/ui/button";
 
 type Tab = "players" | "teams";
 
+function isTeamEntity(entity: Player | Team): entity is Team {
+  return "player1" in entity;
+}
+
 export function StatisticsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
@@ -155,10 +159,9 @@ export function StatisticsPage() {
                 items={filteredEntities.map((entity) => ({
                   id: entity.id,
                   name: entity.name,
-                  description:
-                    "player1" in entity
-                      ? `${entity.player1.name} & ${entity.player2.name}`
-                      : `ELO: ${entity.elo ?? "Noch keine Wertung"}`,
+                  description: isTeamEntity(entity)
+                    ? `${entity.player1.name} & ${entity.player2.name} · ELO: ${entity.teamElo ?? "Noch keine Wertung"}`
+                    : `ELO: ${entity.elo ?? "Noch keine Wertung"}`,
                   enabled: entity.enabled,
                 }))}
                 selectedId={selectedId}

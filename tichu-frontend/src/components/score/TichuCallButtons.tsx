@@ -79,6 +79,7 @@ export function TichuCallButtons({
                     "h-auto justify-start py-3 text-left",
                     isOtherSuccessful && "opacity-60",
                   )}
+                  disabled={disabled}
                   onClick={() => {
                     onChange(player.id, isCurrent ? null : pendingStatus);
                     closeDialog();

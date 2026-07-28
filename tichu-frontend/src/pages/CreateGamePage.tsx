@@ -7,7 +7,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import useSWR from "swr";
-import type { Team } from "@/lib/Types";
+import type { Player, Team } from "@/lib/Types";
 import { startGame } from "@/lib/api/Games";
 import { fetchPlayers } from "@/lib/api/Players";
 import { fetchTeams } from "@/lib/api/Teams";
@@ -43,11 +43,15 @@ export function CreateGamePage() {
     isLoading: teamsLoading,
     mutate: refreshTeams,
   } = useSWR<Team[]>(apiKeys.teams, fetchTeams);
-  const { data: players, isLoading: playersLoading } = useSWR(
-    apiKeys.players,
-    fetchPlayers,
-  );
+  const {
+    data: players,
+    error: playersError,
+    isLoading: playersLoading,
+    mutate: refreshPlayers,
+  } = useSWR<Player[]>(apiKeys.players, fetchPlayers);
   const activePlayers = (players ?? []).filter((player) => player.enabled);
+  const canQuickStart =
+    !playersLoading && !playersError && activePlayers.length >= 4;
   const availableTeams = (teams ?? []).filter(
     (team) => team.enabled && team.player1.enabled && team.player2.enabled,
   );
@@ -163,11 +167,31 @@ export function CreateGamePage() {
           }
         />
       )}
+      {playersLoading && <LoadingState label="Spieler werden geladen ..." />}
+      {playersError && (
+        <ErrorState
+          title="Spieler konnten nicht geladen werden"
+          description="Die Spielerdaten sind momentan nicht verfügbar. Der Quick Start bleibt deaktiviert."
+          action={
+            <Button variant="outline" onClick={() => void refreshPlayers()}>
+              Erneut versuchen
+            </Button>
+          }
+        />
+      )}
+      {!playersLoading && !playersError && activePlayers.length < 4 && (
+        <InlineMessage variant="info">
+          Quick Start ist derzeit nicht möglich. Für eine Partie brauchst du
+          mindestens vier aktive Spieler. Aktuell sind {activePlayers.length}{" "}
+          aktiv.
+        </InlineMessage>
+      )}
 
       {!teamsLoading &&
         !teamsError &&
         availableTeams.length === 0 &&
         !playersLoading &&
+        !playersError &&
         activePlayers.length < 4 && (
           <EmptyState
             title="Keine aktiven Teams vorhanden"
@@ -215,11 +239,18 @@ export function CreateGamePage() {
                     Zufällige Teams für ein Spiel erstellen
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Wähle vier Spieler und lasse die Teams zufällig bilden.
+                    {playersError
+                      ? "Die Spieler konnten nicht geladen werden."
+                      : playersLoading
+                        ? "Spielerdaten werden geladen ..."
+                        : canQuickStart
+                          ? "Wähle vier Spieler und lasse die Teams zufällig bilden."
+                          : "Für Quick Start brauchst du mindestens vier aktive Spieler."}
                   </p>
                 </div>
                 <Button
                   variant="secondary"
+                  disabled={!canQuickStart}
                   onClick={() => setIsQuickStartOpen(true)}
                 >
                   <Shuffle />

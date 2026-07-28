@@ -15,11 +15,18 @@ import {
 } from "@/components/score/TichuCallButtons";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { LoadingState } from "@/components/feedback/LoadingState";
+import { InlineMessage } from "@/components/feedback/InlineMessage";
 import { apiKeys } from "@/lib/api/keys";
-import { validateRoundScore } from "@/lib/score";
-import { calculateRoundScore } from "@/lib/score";
+import {
+  calculateRoundScore,
+  getRoundKeyForInput,
+  hasRoundInput,
+  validateRoundScore,
+} from "@/lib/score";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { createRequestKey } from "@/lib/requestKey";
+import { getApiErrorMessage } from "@/lib/api/client";
+import { getGameRefreshInterval } from "@/lib/gamePolling";
 
 type ActiveTeam = "team1" | "team2";
 
@@ -29,21 +36,33 @@ export function SubmitScore() {
     data: game,
     error,
     mutate: refreshGame,
-  } = useSWR<Game>(id ? apiKeys.game(id) : null, () => fetchGame(id!));
+  } = useSWR<Game>(id ? apiKeys.game(id) : null, () => fetchGame(id!), {
+    refreshInterval: getGameRefreshInterval,
+    refreshWhenHidden: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
   const [activeTeam, setActiveTeam] = useState<ActiveTeam>("team1");
   const [replaceNextInput, setReplaceNextInput] = useState(false);
   const [team1Base, setTeam1Base] = useState(0);
   const [team2Base, setTeam2Base] = useState(0);
   const [callStatuses, setCallStatuses] = useState<TichuCallStatus>({});
   const [doubleVictory, setDoubleVictory] = useState<ActiveTeam | null>(null);
-  const [hasInput, setHasInput] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [roundKey, setRoundKey] = useState<string | null>(null);
+  const hasInput = hasRoundInput(
+    team1Base,
+    team2Base,
+    doubleVictory,
+    callStatuses,
+  );
+  const shouldWarnBeforeUnload =
+    hasInput && !game?.hasEnded && !game?.pendingFinish;
 
   useEffect(() => {
-    if (!hasInput) return;
+    if (!shouldWarnBeforeUnload) return;
 
     function warnBeforeLeaving(event: BeforeUnloadEvent) {
       event.preventDefault();
@@ -52,7 +71,28 @@ export function SubmitScore() {
 
     window.addEventListener("beforeunload", warnBeforeLeaving);
     return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
-  }, [hasInput]);
+  }, [shouldWarnBeforeUnload]);
+
+  useEffect(() => {
+    if (!id || game?.hasEnded) return;
+
+    function revalidateWhenVisible() {
+      if (document.visibilityState === "visible") {
+        void refreshGame().catch(() => undefined);
+      }
+    }
+
+    function revalidateWhenFocused() {
+      void refreshGame().catch(() => undefined);
+    }
+
+    document.addEventListener("visibilitychange", revalidateWhenVisible);
+    window.addEventListener("focus", revalidateWhenFocused);
+    return () => {
+      document.removeEventListener("visibilitychange", revalidateWhenVisible);
+      window.removeEventListener("focus", revalidateWhenFocused);
+    };
+  }, [game?.hasEnded, id, refreshGame]);
 
   useEffect(() => {
     if (!submitSuccess && !submitError) return;
@@ -63,7 +103,7 @@ export function SubmitScore() {
     return () => window.clearTimeout(timer);
   }, [submitError, submitSuccess]);
 
-  if (error) {
+  if (error && !game) {
     return (
       <ErrorState
         description="Das Spiel konnte nicht geladen werden. Prüfe den Link oder versuche es erneut."
@@ -76,7 +116,7 @@ export function SubmitScore() {
     );
   }
   if (!game) return <LoadingState label="Spiel wird geladen ..." />;
-  if (game.hasEnded && !submitSuccess) {
+  if (game.hasEnded) {
     return (
       <ErrorState
         title="Spiel bereits beendet"
@@ -125,7 +165,6 @@ export function SubmitScore() {
     setTeam2Base(0);
     setCallStatuses({});
     setDoubleVictory(null);
-    setHasInput(false);
     setReplaceNextInput(false);
     setSubmitSuccess(false);
     setRoundKey(null);
@@ -133,7 +172,6 @@ export function SubmitScore() {
 
   function markInput() {
     setRoundKey(null);
-    setHasInput(true);
     setSubmitSuccess(false);
     setSubmitError(null);
   }
@@ -158,7 +196,7 @@ export function SubmitScore() {
   }
 
   async function handleSubmit() {
-    if (!isValid) return;
+    if (!isValid || activeGame.pendingFinish || activeGame.hasEnded) return;
 
     const tichuCalls = [...team1Players, ...team2Players]
       .filter(
@@ -175,7 +213,12 @@ export function SubmitScore() {
       setSubmitError(null);
       setSubmitSuccess(false);
       setIsSubmitting(true);
-      const requestKey = roundKey ?? createRequestKey();
+      const requestKey = getRoundKeyForInput(
+        hasInput,
+        roundKey,
+        createRequestKey,
+      );
+      if (!requestKey) return;
       setRoundKey(requestKey);
       await submitScore(activeGame.id, {
         roundKey: requestKey,
@@ -194,9 +237,10 @@ export function SubmitScore() {
       }
     } catch (reason) {
       setSubmitError(
-        reason instanceof Error
-          ? reason.message
-          : "Die Runde konnte nicht gespeichert werden. Deine Eingabe bleibt erhalten.",
+        getApiErrorMessage(
+          reason,
+          "Die Runde konnte nicht gespeichert werden. Deine Eingabe bleibt erhalten.",
+        ),
       );
     } finally {
       setIsSubmitting(false);
@@ -246,6 +290,12 @@ export function SubmitScore() {
 
         <Card className="min-h-0 flex-1 overflow-hidden">
           <CardContent className="flex h-full min-h-0 flex-col gap-2 p-2 sm:p-3">
+            {activeGame.pendingFinish && (
+              <InlineMessage variant="warning">
+                Das Spiel wird gerade beendet. Eingaben sind vorübergehend
+                deaktiviert.
+              </InlineMessage>
+            )}
             <TeamScoreDisplay
               team1Name={activeGame.team1.name}
               team2Name={activeGame.team2.name}
@@ -255,6 +305,7 @@ export function SubmitScore() {
               team2Adjustment={team2Adjustment}
               doubleVictory={doubleVictory}
               activeTeam={activeTeam}
+              disabled={activeGame.pendingFinish}
               onSelectTeam={(team) => {
                 setActiveTeam(team);
                 setReplaceNextInput(true);
@@ -274,7 +325,8 @@ export function SubmitScore() {
               }}
               replaceNextInput={replaceNextInput}
               onInputConsumed={() => setReplaceNextInput(false)}
-              disabled={doubleVictory !== null || isSubmitting}
+              disabled={activeGame.pendingFinish || isSubmitting}
+              disableScoreInput={doubleVictory !== null}
               isSubmitting={isSubmitting}
             />
 
@@ -290,13 +342,13 @@ export function SubmitScore() {
                 })),
               ]}
               statuses={callStatuses}
-              disabled={isSubmitting}
+              disabled={activeGame.pendingFinish || isSubmitting}
               onChange={handleCallChange}
             />
 
             <Button
               className="mt-auto h-12 w-full text-base"
-              disabled={!isValid || isSubmitting}
+              disabled={!isValid || activeGame.pendingFinish || isSubmitting}
               onClick={() => void handleSubmit()}
             >
               {isSubmitting ? "Wird gespeichert ..." : "Runde speichern"}

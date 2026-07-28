@@ -9,6 +9,7 @@ import {
 } from "@/lib/api/Players";
 import type { Player } from "@/lib/Types";
 import { apiKeys } from "@/lib/api/keys";
+import { getApiErrorMessage } from "@/lib/api/client";
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
@@ -30,6 +31,7 @@ export function PlayersPage() {
   const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
   const {
     data: players,
@@ -44,27 +46,67 @@ export function PlayersPage() {
     return true;
   });
 
-  async function handleStatus(player: Player) {
+  function showRefreshWarning() {
+    setRefreshWarning(
+      "Die Änderung wurde gespeichert, aber die Liste konnte nicht aktualisiert werden.",
+    );
+  }
+
+  async function refreshPlayerList() {
     try {
-      setErrorMessage(null);
-      setSuccessMessage(null);
-      setIsMutating(true);
+      const refreshedPlayers = await fetchPlayers();
+      await mutate(refreshedPlayers, { revalidate: false });
+      setRefreshWarning(null);
+    } catch {
+      showRefreshWarning();
+    }
+  }
+
+  async function reconcilePlayerList(update: (current: Player[]) => Player[]) {
+    try {
+      await mutate((current) => update(current ?? []), { revalidate: false });
+    } catch {
+      showRefreshWarning();
+    }
+    try {
+      const refreshedPlayers = await fetchPlayers();
+      await mutate(refreshedPlayers, { revalidate: false });
+    } catch {
+      showRefreshWarning();
+    }
+  }
+
+  async function handleStatus(player: Player) {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setRefreshWarning(null);
+    setIsMutating(true);
+    try {
       await updatePlayerStatus(player.id, !player.enabled);
-      await mutate();
-      try {
-        await mutateCache(apiKeys.teams);
-      } catch {
-        // The player mutation succeeded; a dependent cache can refresh later.
-      }
-      setSuccessMessage(
-        `Spieler ${player.enabled ? "deaktiviert" : "aktiviert"}.`,
-      );
     } catch (reason) {
       setErrorMessage(
-        reason instanceof Error
-          ? reason.message
-          : "Spielerstatus konnte nicht geändert werden.",
+        getApiErrorMessage(
+          reason,
+          "Spielerstatus konnte nicht geändert werden.",
+        ),
       );
+      setIsMutating(false);
+      return;
+    }
+    setSuccessMessage(
+      `Spieler ${player.enabled ? "deaktiviert" : "aktiviert"}.`,
+    );
+    await reconcilePlayerList((current) =>
+      current.map((candidate) =>
+        candidate.id === player.id
+          ? { ...candidate, enabled: !player.enabled }
+          : candidate,
+      ),
+    );
+    try {
+      await mutateCache(apiKeys.teams);
+    } catch {
+      showRefreshWarning();
     } finally {
       setIsMutating(false);
     }
@@ -72,25 +114,29 @@ export function PlayersPage() {
 
   async function handleDelete() {
     if (!playerToDelete) return;
+    const player = playerToDelete;
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setRefreshWarning(null);
+    setIsMutating(true);
     try {
-      setErrorMessage(null);
-      setSuccessMessage(null);
-      setIsMutating(true);
-      await deletePlayer(playerToDelete.id);
-      await mutate();
-      try {
-        await mutateCache(apiKeys.teams);
-      } catch {
-        // The player mutation succeeded; a dependent cache can refresh later.
-      }
-      setSuccessMessage("Spieler wurde gelöscht.");
-      setPlayerToDelete(null);
+      await deletePlayer(player.id);
     } catch (reason) {
       setErrorMessage(
-        reason instanceof Error
-          ? reason.message
-          : "Spieler konnte nicht gelöscht werden.",
+        getApiErrorMessage(reason, "Spieler konnte nicht gelöscht werden."),
       );
+      setIsMutating(false);
+      return;
+    }
+    setPlayerToDelete(null);
+    setSuccessMessage("Spieler wurde gelöscht.");
+    await reconcilePlayerList((current) =>
+      current.filter((candidate) => candidate.id !== player.id),
+    );
+    try {
+      await mutateCache(apiKeys.teams);
+    } catch {
+      showRefreshWarning();
     } finally {
       setIsMutating(false);
     }
@@ -115,6 +161,9 @@ export function PlayersPage() {
       {errorMessage && (
         <InlineMessage variant="error">{errorMessage}</InlineMessage>
       )}
+      {refreshWarning && (
+        <InlineMessage variant="warning">{refreshWarning}</InlineMessage>
+      )}
       {successMessage && (
         <InlineMessage variant="success">{successMessage}</InlineMessage>
       )}
@@ -137,32 +186,44 @@ export function PlayersPage() {
       </div>
 
       {isLoading && <LoadingState label="Spieler werden geladen ..." />}
-      {error && (
+      {error && !players && (
         <ErrorState
           description="Die Spieler konnten nicht geladen werden."
           action={
-            <Button variant="outline" onClick={() => void mutate()}>
+            <Button variant="outline" onClick={() => void refreshPlayerList()}>
               Erneut versuchen
             </Button>
           }
         />
       )}
-      {!isLoading && !error && visiblePlayers.length === 0 && (
+      {!isLoading && !(error && !players) && visiblePlayers.length === 0 && (
         <EmptyState
           title={
             filter === "active"
               ? "Keine aktiven Spieler"
-              : "Keine Spieler gefunden"
+              : filter === "disabled"
+                ? "Keine deaktivierten Spieler"
+                : "Keine Spieler gefunden"
           }
-          description="Erstelle einen Spieler oder ändere den aktuellen Filter."
+          description={
+            filter === "disabled"
+              ? "Es gibt derzeit keine deaktivierten Spieler."
+              : "Erstelle einen Spieler oder ändere den aktuellen Filter."
+          }
           action={
-            <Button onClick={() => setIsCreateOpen(true)}>
-              Spieler erstellen
-            </Button>
+            filter === "disabled" ? (
+              <Button variant="outline" onClick={() => setFilter("active")}>
+                Filter zurücksetzen
+              </Button>
+            ) : (
+              <Button onClick={() => setIsCreateOpen(true)}>
+                Spieler erstellen
+              </Button>
+            )
           }
         />
       )}
-      {!isLoading && !error && visiblePlayers.length > 0 && (
+      {!isLoading && !(error && !players) && visiblePlayers.length > 0 && (
         <Card>
           <CardContent className="p-0">
             <div className="divide-y">
@@ -216,8 +277,8 @@ export function PlayersPage() {
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         onCreated={(player) => {
-          void mutate();
           setSuccessMessage(`Spieler ${player.name} wurde erstellt.`);
+          void reconcilePlayerList((current) => [...current, player]);
         }}
       />
       <ConfirmDialog

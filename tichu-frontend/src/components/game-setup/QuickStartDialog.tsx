@@ -3,10 +3,12 @@ import { Dices, Search, Users } from "lucide-react";
 import { mutate } from "swr";
 import type { Player, Team } from "@/lib/Types";
 import { createTeam } from "@/lib/api/Teams";
+import { getApiErrorMessage } from "@/lib/api/client";
 import { apiKeys } from "@/lib/api/keys";
 import {
   splitPlayersRandomly,
   findTeamForPlayers,
+  mergeTeamIntoList,
   type PlayerPair,
 } from "@/lib/gameSetup";
 import { Button } from "@/components/ui/button";
@@ -49,22 +51,32 @@ export function QuickStartDialog({
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
   const [pairing, setPairing] = useState<[PlayerPair, PlayerPair] | null>(null);
   const [teamNames, setTeamNames] = useState<[string, string]>(["", ""]);
+  const [createdTeams, setCreatedTeams] = useState<Team[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const activePlayers = useMemo(
+    () => players.filter((player) => player.enabled),
+    [players],
+  );
+  const hasEnoughPlayers = activePlayers.length >= 4;
+  const reconciledTeams = useMemo(
+    () => createdTeams.reduce(mergeTeamIntoList, teams),
+    [createdTeams, teams],
+  );
 
   const visiblePlayers = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase();
-    return players.filter(
+    return activePlayers.filter(
       (player) =>
         !normalizedSearch ||
         player.name.toLocaleLowerCase().includes(normalizedSearch),
     );
-  }, [players, search]);
+  }, [activePlayers, search]);
 
   const existingTeams = pairing
     ? [
-        findTeamForPlayers(teams, pairing[0]),
-        findTeamForPlayers(teams, pairing[1]),
+        findTeamForPlayers(reconciledTeams, pairing[0]),
+        findTeamForPlayers(reconciledTeams, pairing[1]),
       ]
     : [null, null];
   const missingIndexes = existingTeams
@@ -72,6 +84,10 @@ export function QuickStartDialog({
     .filter((index) => index >= 0);
 
   function togglePlayer(player: Player) {
+    if (!hasEnoughPlayers) {
+      setError("Für Quick Start brauchst du mindestens vier aktive Spieler.");
+      return;
+    }
     const isSelected = selectedPlayers.some(
       (selected) => selected.id === player.id,
     );
@@ -110,6 +126,10 @@ export function QuickStartDialog({
 
   function continueWithPairing() {
     if (!pairing) return;
+    if (!hasEnoughPlayers) {
+      setError("Für Quick Start brauchst du mindestens vier aktive Spieler.");
+      return;
+    }
     if (missingIndexes.length > 0) {
       setError(null);
       setStep("create");
@@ -121,6 +141,10 @@ export function QuickStartDialog({
 
   async function createMissingTeams() {
     if (!pairing) return;
+    if (!hasEnoughPlayers) {
+      setError("Für Quick Start brauchst du mindestens vier aktive Spieler.");
+      return;
+    }
     if (missingIndexes.some((index) => !teamNames[index].trim())) {
       setError("Bitte gib für jedes neue Team einen Namen ein.");
       return;
@@ -131,22 +155,34 @@ export function QuickStartDialog({
       setIsCreating(true);
       const result = [...existingTeams] as [Team | null, Team | null];
       for (const index of missingIndexes) {
-        result[index] = await createTeam({
+        const createdTeam = await createTeam({
           name: teamNames[index].trim(),
           player1Id: pairing[index][0].id,
           player2Id: pairing[index][1].id,
         });
+        result[index] = createdTeam;
+        setCreatedTeams((previous) => mergeTeamIntoList(previous, createdTeam));
+        try {
+          await mutate<Team[]>(
+            apiKeys.teams,
+            (currentTeams) =>
+              mergeTeamIntoList(currentTeams ?? [], createdTeam),
+            { revalidate: false },
+          );
+        } catch {
+          // The local reconciliation above is sufficient for a safe retry.
+        }
       }
-      await mutate(apiKeys.teams);
       if (result[0] && result[1]) {
         onComplete(result[0], result[1]);
         onOpenChange(false);
       }
     } catch (reason) {
       setError(
-        reason instanceof Error
-          ? reason.message
-          : "Die neuen Teams konnten nicht erstellt werden.",
+        getApiErrorMessage(
+          reason,
+          "Die neuen Teams konnten nicht erstellt werden.",
+        ),
       );
     } finally {
       setIsCreating(false);
@@ -171,6 +207,12 @@ export function QuickStartDialog({
           )}
         </DialogHeader>
 
+        {!hasEnoughPlayers && (
+          <InlineMessage variant="warning">
+            Für Quick Start brauchst du mindestens vier aktive Spieler. Aktuell
+            sind {activePlayers.length} aktiv.
+          </InlineMessage>
+        )}
         {error && <InlineMessage variant="error">{error}</InlineMessage>}
 
         {step === "players" && (
@@ -289,7 +331,7 @@ export function QuickStartDialog({
           {step === "players" ? (
             <Button
               type="button"
-              disabled={selectedPlayers.length !== 4}
+              disabled={selectedPlayers.length !== 4 || !hasEnoughPlayers}
               onClick={() => {
                 if (pairing) setStep("pairing");
               }}

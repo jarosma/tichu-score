@@ -10,6 +10,7 @@ interface Props {
   doubleVictory: "team1" | "team2" | null;
   activeTeam: "team1" | "team2";
   onSelectTeam: (team: "team1" | "team2") => void;
+  disabled?: boolean;
 }
 
 export function TeamScoreDisplay({
@@ -22,6 +23,7 @@ export function TeamScoreDisplay({
   doubleVictory,
   activeTeam,
   onSelectTeam,
+  disabled = false,
 }: Props) {
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -31,6 +33,7 @@ export function TeamScoreDisplay({
         adjustment={team1Adjustment}
         active={activeTeam === "team1"}
         special={doubleVictory === "team1"}
+        disabled={disabled}
         onSelect={() => onSelectTeam("team1")}
       />
       <ScoreCard
@@ -39,6 +42,7 @@ export function TeamScoreDisplay({
         adjustment={team2Adjustment}
         active={activeTeam === "team2"}
         special={doubleVictory === "team2"}
+        disabled={disabled}
         onSelect={() => onSelectTeam("team2")}
       />
     </div>
@@ -51,6 +55,7 @@ interface ScoreCardProps {
   adjustment: number;
   active: boolean;
   special: boolean;
+  disabled: boolean;
   onSelect: () => void;
 }
 
@@ -60,12 +65,14 @@ function ScoreCard({
   adjustment,
   active,
   special,
+  disabled,
   onSelect,
 }: ScoreCardProps) {
   return (
     <button
       type="button"
       onClick={onSelect}
+      disabled={disabled}
       className={cn(
         "min-w-0 rounded-xl border p-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active ? "border-primary bg-primary/10" : "border-border bg-card",

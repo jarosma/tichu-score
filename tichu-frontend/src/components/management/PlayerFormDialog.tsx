@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InlineMessage } from "@/components/feedback/InlineMessage";
 import { createPlayer } from "@/lib/api/Players";
+import { getApiErrorMessage } from "@/lib/api/client";
 import type { Player } from "@/lib/Types";
 
 interface PlayerFormDialogProps {
@@ -55,9 +56,7 @@ export function PlayerFormDialog({
       close();
     } catch (reason) {
       setError(
-        reason instanceof Error
-          ? reason.message
-          : "Spieler konnte nicht erstellt werden.",
+        getApiErrorMessage(reason, "Spieler konnte nicht erstellt werden."),
       );
     } finally {
       setIsSubmitting(false);

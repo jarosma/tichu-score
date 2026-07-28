@@ -3,6 +3,33 @@ export interface ScoreValidation {
   message: string;
 }
 
+export type RoundTeam = "team1" | "team2";
+
+export function hasRoundInput(
+  team1Base: number,
+  team2Base: number,
+  doubleVictory: RoundTeam | null,
+  callStatuses: Readonly<Record<string, boolean | null | undefined>>,
+): boolean {
+  return (
+    team1Base !== 0 ||
+    team2Base !== 0 ||
+    doubleVictory !== null ||
+    Object.values(callStatuses).some(
+      (status) => status !== null && status !== undefined,
+    )
+  );
+}
+
+export function getRoundKeyForInput(
+  hasInput: boolean,
+  currentKey: string | null,
+  createKey: () => string,
+): string | null {
+  if (!hasInput) return null;
+  return currentKey ?? createKey();
+}
+
 export function validateRoundScore(
   team1Score: number,
   team2Score: number,

@@ -6,6 +6,7 @@ import { deleteTeam, fetchTeams, updateTeamStatus } from "@/lib/api/Teams";
 import { fetchPlayers } from "@/lib/api/Players";
 import type { Player, Team } from "@/lib/Types";
 import { apiKeys } from "@/lib/api/keys";
+import { getApiErrorMessage } from "@/lib/api/client";
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
@@ -27,6 +28,7 @@ export function TeamsPage() {
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
   const {
     data: teams,
@@ -47,44 +49,85 @@ export function TeamsPage() {
     return true;
   });
 
-  async function handleStatus(team: Team) {
+  function showRefreshWarning() {
+    setRefreshWarning(
+      "Die Änderung wurde gespeichert, aber die Liste konnte nicht aktualisiert werden.",
+    );
+  }
+
+  async function refreshTeamList() {
     try {
-      setErrorMessage(null);
-      setSuccessMessage(null);
-      setIsMutating(true);
+      const refreshedTeams = await fetchTeams();
+      await mutateTeams(refreshedTeams, { revalidate: false });
+      setRefreshWarning(null);
+    } catch {
+      showRefreshWarning();
+    }
+  }
+
+  async function reconcileTeamList(update: (current: Team[]) => Team[]) {
+    try {
+      await mutateTeams((current) => update(current ?? []), {
+        revalidate: false,
+      });
+    } catch {
+      showRefreshWarning();
+    }
+    try {
+      const refreshedTeams = await fetchTeams();
+      await mutateTeams(refreshedTeams, { revalidate: false });
+    } catch {
+      showRefreshWarning();
+    }
+  }
+
+  async function handleStatus(team: Team) {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setRefreshWarning(null);
+    setIsMutating(true);
+    try {
       await updateTeamStatus(team.id, !team.enabled);
-      await mutateTeams();
-      setSuccessMessage(`Team ${team.enabled ? "deaktiviert" : "aktiviert"}.`);
     } catch (reason) {
       setErrorMessage(
-        reason instanceof Error
-          ? reason.message
-          : "Teamstatus konnte nicht geändert werden.",
+        getApiErrorMessage(reason, "Teamstatus konnte nicht geändert werden."),
       );
-    } finally {
       setIsMutating(false);
+      return;
     }
+    setSuccessMessage(`Team ${team.enabled ? "deaktiviert" : "aktiviert"}.`);
+    await reconcileTeamList((current) =>
+      current.map((candidate) =>
+        candidate.id === team.id
+          ? { ...candidate, enabled: !team.enabled }
+          : candidate,
+      ),
+    );
+    setIsMutating(false);
   }
 
   async function handleDelete() {
     if (!teamToDelete) return;
+    const team = teamToDelete;
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setRefreshWarning(null);
+    setIsMutating(true);
     try {
-      setErrorMessage(null);
-      setSuccessMessage(null);
-      setIsMutating(true);
-      await deleteTeam(teamToDelete.id);
-      await mutateTeams();
-      setSuccessMessage("Team wurde gelöscht.");
-      setTeamToDelete(null);
+      await deleteTeam(team.id);
     } catch (reason) {
       setErrorMessage(
-        reason instanceof Error
-          ? reason.message
-          : "Team konnte nicht gelöscht werden.",
+        getApiErrorMessage(reason, "Team konnte nicht gelöscht werden."),
       );
-    } finally {
       setIsMutating(false);
+      return;
     }
+    setTeamToDelete(null);
+    setSuccessMessage("Team wurde gelöscht.");
+    await reconcileTeamList((current) =>
+      current.filter((candidate) => candidate.id !== team.id),
+    );
+    setIsMutating(false);
   }
 
   const activePlayers = (players ?? []).filter((player) => player.enabled);
@@ -110,6 +153,9 @@ export function TeamsPage() {
       <ReturnToGameBanner />
       {errorMessage && (
         <InlineMessage variant="error">{errorMessage}</InlineMessage>
+      )}
+      {refreshWarning && (
+        <InlineMessage variant="warning">{refreshWarning}</InlineMessage>
       )}
       {successMessage && (
         <InlineMessage variant="success">{successMessage}</InlineMessage>
@@ -147,37 +193,51 @@ export function TeamsPage() {
       </div>
 
       {teamsLoading && <LoadingState label="Teams werden geladen ..." />}
-      {teamsError && (
+      {teamsError && !teams && (
         <ErrorState
           description="Die Teams konnten nicht geladen werden."
           action={
-            <Button variant="outline" onClick={() => void mutateTeams()}>
+            <Button variant="outline" onClick={() => void refreshTeamList()}>
               Erneut versuchen
             </Button>
           }
         />
       )}
-      {!teamsLoading && !teamsError && visibleTeams.length === 0 && (
-        <EmptyState
-          title={
-            filter === "active" ? "Keine aktiven Teams" : "Keine Teams gefunden"
-          }
-          description={
-            activePlayers.length < 2
-              ? "Erstelle zuerst mindestens zwei aktive Spieler."
-              : "Erstelle ein Team oder ändere den aktuellen Filter."
-          }
-          action={
-            <Button
-              onClick={() => setIsCreateOpen(true)}
-              disabled={!canCreateTeam}
-            >
-              Team erstellen
-            </Button>
-          }
-        />
-      )}
-      {!teamsLoading && !teamsError && visibleTeams.length > 0 && (
+      {!teamsLoading &&
+        !(teamsError && !teams) &&
+        visibleTeams.length === 0 && (
+          <EmptyState
+            title={
+              filter === "active"
+                ? "Keine aktiven Teams"
+                : filter === "disabled"
+                  ? "Keine deaktivierten Teams"
+                  : "Keine Teams gefunden"
+            }
+            description={
+              filter === "disabled"
+                ? "Es gibt derzeit keine deaktivierten Teams."
+                : activePlayers.length < 2
+                  ? "Erstelle zuerst mindestens zwei aktive Spieler."
+                  : "Erstelle ein Team oder ändere den aktuellen Filter."
+            }
+            action={
+              filter === "disabled" ? (
+                <Button variant="outline" onClick={() => setFilter("active")}>
+                  Filter zurücksetzen
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setIsCreateOpen(true)}
+                  disabled={!canCreateTeam}
+                >
+                  Team erstellen
+                </Button>
+              )
+            }
+          />
+        )}
+      {!teamsLoading && !(teamsError && !teams) && visibleTeams.length > 0 && (
         <Card>
           <CardContent className="p-0">
             <div className="divide-y">
@@ -233,8 +293,8 @@ export function TeamsPage() {
         players={activePlayers}
         onOpenChange={setIsCreateOpen}
         onCreated={(team) => {
-          void mutateTeams();
           setSuccessMessage(`Team ${team.name} wurde erstellt.`);
+          void reconcileTeamList((current) => [...current, team]);
         }}
       />
       <ConfirmDialog

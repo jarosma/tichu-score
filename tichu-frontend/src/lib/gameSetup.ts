@@ -59,3 +59,12 @@ export function findTeamForPlayers(
     ) ?? null
   );
 }
+
+export function mergeTeamIntoList(teams: Team[], team: Team): Team[] {
+  const index = teams.findIndex((candidate) => candidate.id === team.id);
+  if (index < 0) return [...teams, team];
+
+  const next = [...teams];
+  next[index] = team;
+  return next;
+}

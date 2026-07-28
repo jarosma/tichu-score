@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
+import { StatusBadge } from "@/components/management/StatusBadge";
 
 interface EntityListItem {
   id: string;
@@ -48,6 +49,9 @@ export function EntityList({ items, selectedId, onSelect }: EntityListProps) {
                   )}
                 >
                   {item.description}
+                </span>
+                <span className="mt-2 block">
+                  <StatusBadge enabled={item.enabled} />
                 </span>
               </span>
             </button>
