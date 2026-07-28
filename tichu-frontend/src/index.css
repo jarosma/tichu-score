@@ -121,3 +121,51 @@
     @apply bg-background text-foreground;
   }
 }
+
+.viewport-main {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+.score-entry-page {
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  overscroll-behavior-y: contain;
+}
+
+.qr-trigger-floating {
+  bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  right: calc(1.5rem + env(safe-area-inset-right));
+}
+
+@media (max-height: 560px) {
+  .score-entry-content {
+    min-height: max-content;
+  }
+
+  .score-entry-card {
+    flex: none;
+    overflow: visible;
+  }
+
+  .score-entry-card-content {
+    height: auto;
+  }
+
+  .score-entry-card-content .score-numpad,
+  .score-entry-card-content .score-numpad-grid {
+    flex: none;
+  }
+
+  .score-entry-page .score-numpad-key {
+    min-height: 2.5rem;
+  }
+
+  .spectate-page {
+    flex: none;
+    min-height: max-content;
+  }
+
+  .spectate-score {
+    flex: none;
+    min-height: 22rem;
+  }
+}

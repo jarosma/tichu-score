@@ -158,7 +158,9 @@ export function SubmitScore() {
     team2Adjustment,
     doubleVictory === "team2",
   );
-  const isValid = validateRoundScore(team1Score, team2Score, hasInput).valid;
+  const validation = validateRoundScore(team1Score, team2Score, hasInput);
+  const isValid = validation.valid;
+  const invalidScoreMessage = hasInput && !isValid ? validation.message : null;
 
   function resetRound() {
     setTeam1Base(0);
@@ -251,9 +253,9 @@ export function SubmitScore() {
     <main
       id="main-content"
       tabIndex={-1}
-      className="h-[100dvh] overflow-hidden bg-background px-2 py-2 text-foreground sm:px-3 sm:py-4"
+      className="score-entry-page h-[100dvh] overflow-y-auto bg-background px-2 py-2 text-foreground sm:px-3 sm:py-4"
     >
-      <div className="mx-auto flex h-full min-h-0 w-full max-w-md flex-col gap-2">
+      <div className="score-entry-content mx-auto flex min-h-full w-full max-w-md flex-col gap-2">
         <header className="flex shrink-0 items-center justify-between px-1">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
@@ -292,8 +294,8 @@ export function SubmitScore() {
           </div>
         )}
 
-        <Card className="min-h-0 flex-1 overflow-hidden">
-          <CardContent className="flex h-full min-h-0 flex-col gap-2 p-2 sm:p-3">
+        <Card className="score-entry-card min-h-0 flex-1 overflow-hidden py-0">
+          <CardContent className="score-entry-card-content flex h-full min-h-0 flex-col gap-2 p-2 sm:p-3">
             {activeGame.pendingFinish && (
               <InlineMessage variant="warning">
                 Das Spiel wird gerade beendet. Eingaben sind vorübergehend
@@ -350,9 +352,22 @@ export function SubmitScore() {
               onChange={handleCallChange}
             />
 
+            {invalidScoreMessage && (
+              <InlineMessage
+                id="score-validation-message"
+                variant="error"
+                className="px-3 py-2 text-xs"
+              >
+                {invalidScoreMessage}
+              </InlineMessage>
+            )}
+
             <Button
               className="mt-auto h-12 w-full text-base"
               disabled={!isValid || activeGame.pendingFinish || isSubmitting}
+              aria-describedby={
+                invalidScoreMessage ? "score-validation-message" : undefined
+              }
               onClick={() => void handleSubmit()}
             >
               {isSubmitting ? "Wird gespeichert ..." : "Runde speichern"}

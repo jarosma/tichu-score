@@ -143,19 +143,27 @@ export function SpectateGame({ newGame }: SpectateGameProps) {
   }
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-      <header className="shrink-0 text-center">
-        <h1
-          ref={endHeadingRef}
-          id="page-heading"
-          tabIndex={-1}
-          className="text-3xl font-semibold tracking-tight sm:text-4xl"
-        >
-          Spiel anschauen
-        </h1>
-        <p className="mt-1 truncate text-sm text-muted-foreground sm:text-base">
-          {activeGame.team1.name} gegen {activeGame.team2.name}
-        </p>
+    <div className="spectate-page relative flex min-h-full flex-1 flex-col gap-2">
+      <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2">
+        <div aria-hidden="true" />
+        <div className="min-w-0 text-center">
+          <h1
+            ref={endHeadingRef}
+            id="page-heading"
+            tabIndex={-1}
+            className="text-3xl font-semibold tracking-tight sm:text-4xl"
+          >
+            Spiel anschauen
+          </h1>
+          <p className="mt-1 truncate text-sm text-muted-foreground sm:text-base">
+            {activeGame.team1.name} gegen {activeGame.team2.name}
+          </p>
+        </div>
+        <div className="justify-self-end">
+          {!activeGame.hasEnded && (
+            <GameQrDialog submitScoreUrl={submitScoreUrl} placement="inline" />
+          )}
+        </div>
       </header>
       {(endError || error) && (
         <div
@@ -166,11 +174,9 @@ export function SpectateGame({ newGame }: SpectateGameProps) {
             "Die Verbindung ist unterbrochen. Der letzte bekannte Spielstand wird angezeigt."}
         </div>
       )}
-      <div className="flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-hidden">
+      <div className="spectate-score flex min-h-0 w-full max-w-6xl flex-1 flex-col">
         <GameScore game={activeGame} />
       </div>
-
-      {!activeGame.hasEnded && <GameQrDialog submitScoreUrl={submitScoreUrl} />}
 
       {!activeGame.hasEnded && (
         <Button

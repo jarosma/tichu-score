@@ -64,6 +64,11 @@ describe("AppShell route focus and Enter shortcut", () => {
   it("focuses the page heading after card navigation and browser-style back/forward", async () => {
     renderRouter();
 
+    expect(screen.getByRole("main")).toHaveClass(
+      "viewport-main",
+      "overflow-y-auto",
+    );
+
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Startseite" })).toHaveFocus(),
     );

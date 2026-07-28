@@ -5,6 +5,7 @@ interface InlineMessageProps {
   children: ReactNode;
   variant?: "info" | "success" | "warning" | "error";
   id?: string;
+  className?: string;
   role?: AriaRole;
   "aria-live"?: "assertive" | "off" | "polite";
 }
@@ -22,6 +23,7 @@ export function InlineMessage({
   children,
   variant = "info",
   id,
+  className,
   role,
   "aria-live": ariaLive,
 }: InlineMessageProps) {
@@ -33,7 +35,11 @@ export function InlineMessage({
       role={role ?? (isAlert ? "alert" : "status")}
       aria-live={ariaLive ?? (isAlert ? "assertive" : "polite")}
       aria-atomic="true"
-      className={cn("rounded-lg border px-4 py-3 text-sm", variants[variant])}
+      className={cn(
+        "rounded-lg border px-4 py-3 text-sm",
+        variants[variant],
+        className,
+      )}
     >
       {children}
     </div>

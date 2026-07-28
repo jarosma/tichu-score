@@ -29,7 +29,7 @@ const actions = [
 
 export function HomePage() {
   return (
-    <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col gap-6 px-2 py-2 sm:gap-8 sm:px-4 sm:py-3 lg:px-6 lg:py-4">
+    <div className="home-page mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 px-2 py-2 sm:gap-8 sm:px-4 sm:py-3 lg:px-6 lg:py-4">
       <section className="shrink-0 text-center">
         <h1
           id="page-heading"
@@ -41,7 +41,7 @@ export function HomePage() {
       </section>
 
       <section
-        className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-3 sm:gap-4"
+        className="home-actions grid flex-1 grid-cols-2 grid-rows-2 gap-3 sm:gap-4"
         aria-label="Tichu Aktionen"
       >
         {actions.map(({ to, title, icon: Icon, primary }) => (

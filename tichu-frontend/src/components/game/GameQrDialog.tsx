@@ -12,12 +12,17 @@ import { QRCodeCanvas } from "qrcode.react";
 import { useRef, useState } from "react";
 import { InlineMessage } from "@/components/feedback/InlineMessage";
 import { focusIfConnected } from "@/lib/focus";
+import { cn } from "@/lib/utils";
 
 interface GameQrDialogProps {
   submitScoreUrl: string;
+  placement?: "floating" | "inline";
 }
 
-export function GameQrDialog({ submitScoreUrl }: GameQrDialogProps) {
+export function GameQrDialog({
+  submitScoreUrl,
+  placement = "floating",
+}: GameQrDialogProps) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -40,7 +45,11 @@ export function GameQrDialog({ submitScoreUrl }: GameQrDialogProps) {
         <Button
           ref={triggerRef}
           size="icon"
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
+          className={cn(
+            placement === "inline"
+              ? "size-10"
+              : "qr-trigger-floating fixed h-14 w-14 rounded-full shadow-lg",
+          )}
           aria-label="Punkteingabe per QR-Code öffnen"
           data-enter-primary="true"
         >

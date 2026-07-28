@@ -68,6 +68,9 @@ function ScoreCard({
   disabled,
   onSelect,
 }: ScoreCardProps) {
+  const tichuLabel =
+    adjustment !== 0 ? `Tichu ${adjustment > 0 ? "+" : ""}${adjustment}` : null;
+
   return (
     <button
       type="button"
@@ -86,11 +89,11 @@ function ScoreCard({
         {score}
       </span>
       <span className="mt-1 block min-h-4 text-xs text-muted-foreground">
-        {special
-          ? "Doppel-Sieg"
-          : adjustment !== 0
-            ? `Tichu ${adjustment > 0 ? "+" : ""}${adjustment}`
-            : " "}
+        {special && tichuLabel
+          ? `Doppelsieg · ${tichuLabel}`
+          : special
+            ? "Doppelsieg"
+            : (tichuLabel ?? " ")}
       </span>
     </button>
   );

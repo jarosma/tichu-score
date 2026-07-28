@@ -1,4 +1,10 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { useEffect } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { SWRConfig, useSWRConfig } from "swr";
@@ -129,5 +135,55 @@ describe("SubmitScore remote game state", () => {
     expect(
       screen.getByRole("button", { name: "Runde speichern" }),
     ).toBeDisabled();
+  });
+});
+
+describe("SubmitScore validation and short viewport structure", () => {
+  // jsdom has no layout engine; manually verify 320px/480px heights and portrait/landscape.
+  it("does not announce an error for an untouched 0:0 round", async () => {
+    mocks.fetchGame.mockResolvedValue(game());
+    renderScore();
+
+    const saveButton = await screen.findByRole("button", {
+      name: "Runde speichern",
+    });
+
+    expect(saveButton).toBeDisabled();
+    expect(
+      screen.queryByText("Gib die Punkte für diese Runde ein."),
+    ).not.toBeInTheDocument();
+    expect(saveButton).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("explains an invalid entered score and associates it with Save", async () => {
+    mocks.fetchGame.mockResolvedValue(game());
+    renderScore();
+
+    const saveButton = await screen.findByRole("button", {
+      name: "Runde speichern",
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^1$/ }));
+
+    expect(
+      await screen.findByText("Beide Teamwerte müssen durch 5 teilbar sein."),
+    ).toBeInTheDocument();
+    expect(saveButton).toBeDisabled();
+    expect(saveButton).toHaveAttribute(
+      "aria-describedby",
+      "score-validation-message",
+    );
+  });
+
+  it("keeps the score controls in a scroll-capable mobile structure", async () => {
+    mocks.fetchGame.mockResolvedValue(game());
+    renderScore();
+
+    await screen.findByRole("button", { name: "Runde speichern" });
+
+    const main = screen.getByRole("main");
+    expect(main).toHaveClass("score-entry-page", "overflow-y-auto");
+    expect(main).not.toHaveClass("overflow-hidden");
+    expect(document.querySelector(".score-entry-card")).toBeInTheDocument();
+    expect(document.querySelector(".score-numpad-grid")).toBeInTheDocument();
   });
 });

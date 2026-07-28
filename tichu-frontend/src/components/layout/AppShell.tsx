@@ -144,7 +144,7 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-[100dvh] bg-background text-foreground">
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r bg-card lg:flex">
         <div className="flex h-20 items-center border-b px-7">
           <div>
@@ -182,7 +182,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </aside>
 
-      <div className="lg:pl-64">
+      <div className="flex min-h-[100dvh] flex-col lg:pl-64">
         <header className="flex h-16 items-center gap-3 border-b px-5 lg:hidden">
           {canGoBack && (
             <Button
@@ -233,9 +233,9 @@ export function AppShell({ children }: AppShellProps) {
           id="main-content"
           tabIndex={-1}
           className={cn(
-            "mx-auto max-w-7xl",
+            "mx-auto w-full max-w-7xl",
             isViewportRoute
-              ? "flex h-[calc(100dvh-7.25rem)] min-h-0 flex-col overflow-hidden px-3 py-3 sm:px-5 sm:py-4 lg:h-dvh lg:px-12 lg:py-6"
+              ? "viewport-main flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 py-3 sm:px-5 sm:py-4 lg:px-12 lg:py-6"
               : "min-h-screen px-5 py-8 sm:px-8 lg:px-12",
           )}
         >

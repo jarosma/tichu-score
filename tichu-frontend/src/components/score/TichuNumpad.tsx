@@ -115,13 +115,13 @@ export function TichuNumpad({
   }, [addDigit, isSubmitting, scoreInputDisabled]);
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-1">
-      <div className="grid min-h-0 flex-1 grid-cols-3 grid-rows-4 gap-1">
+    <div className="score-numpad mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-1">
+      <div className="score-numpad-grid grid min-h-0 flex-1 grid-cols-3 grid-rows-4 gap-1">
         {KEYS.map((k) => (
           <Button
             key={k}
             variant="outline"
-            className="h-full min-h-9 text-xl sm:min-h-12"
+            className="score-numpad-key h-full min-h-9 text-xl sm:min-h-12"
             disabled={scoreInputDisabled || isSubmitting}
             onClick={() => addDigit(k)}
           >
@@ -130,7 +130,7 @@ export function TichuNumpad({
         ))}
         <Button
           variant="outline"
-          className="h-full min-h-9 sm:min-h-12"
+          className="score-numpad-key h-full min-h-9 sm:min-h-12"
           onClick={onNegative}
           disabled={scoreInputDisabled || isSubmitting}
         >
@@ -138,7 +138,7 @@ export function TichuNumpad({
         </Button>
         <Button
           variant="outline"
-          className="h-full min-h-9 text-xl sm:min-h-12"
+          className="score-numpad-key h-full min-h-9 text-xl sm:min-h-12"
           onClick={() => addDigit("0")}
           disabled={scoreInputDisabled || isSubmitting}
         >
@@ -146,7 +146,7 @@ export function TichuNumpad({
         </Button>
         <Button
           variant="outline"
-          className="h-full min-h-9 border-destructive/40 text-destructive hover:bg-destructive/10 sm:min-h-12"
+          className="score-numpad-key h-full min-h-9 border-destructive/40 text-destructive hover:bg-destructive/10 sm:min-h-12"
           onClick={onClear}
           disabled={disabled || isSubmitting}
         >
