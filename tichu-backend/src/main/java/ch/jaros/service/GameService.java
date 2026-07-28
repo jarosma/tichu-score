@@ -2,28 +2,31 @@ package ch.jaros.service;
 
 import ch.jaros.entity.Game;
 import ch.jaros.entity.GameRound;
-import ch.jaros.entity.TichuCall;
+import ch.jaros.entity.GameWinner;
 import ch.jaros.entity.Player;
 import ch.jaros.entity.Team;
-import ch.jaros.exception.InvalidTichuCallException;
-import ch.jaros.repository.TichuCallRepository;
-import ch.jaros.repository.GameRoundRepository;
-import ch.jaros.rest.request.TichuCallRequest;
+import ch.jaros.entity.TichuCall;
+import ch.jaros.exception.GameFinishPendingException;
 import ch.jaros.exception.GameDoesNotExistException;
+import ch.jaros.exception.InvalidTichuCallException;
+import ch.jaros.exception.StaleGameWinnerException;
 import ch.jaros.exception.TeamDoesNotExistException;
 import ch.jaros.exception.TeamsNotDistinctException;
 import ch.jaros.exception.TeamsNotEnabledException;
+import ch.jaros.repository.GameRoundRepository;
 import ch.jaros.repository.GameRepository;
 import ch.jaros.repository.TeamRepository;
+import ch.jaros.repository.TichuCallRepository;
+import ch.jaros.rest.request.TichuCallRequest;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @ApplicationScoped
 @RequiredArgsConstructor
@@ -36,15 +39,18 @@ public class GameService {
     private final StatsService statsService;
 
     @Transactional
-    public Game start(final UUID team1Id, final UUID team2Id) {
+    public Game start(final UUID team1Id, final UUID team2Id, final UUID idempotencyKey) {
+        final Game existingGame = gameRepository.findByStartKey(idempotencyKey);
+        if (existingGame != null) return existingGame;
+
         final Team team1 = getTeam(team1Id, "Team 1 does not exist");
         final Team team2 = getTeam(team2Id, "Team 2 does not exist");
         if (team1 == team2 || !team1.distinctTo(team2)) throw new TeamsNotDistinctException();
         if (!team1.isEnabled() || !team2.isEnabled()) throw new TeamsNotEnabledException();
 
-        final Game game = Game.create(team1, team2, OffsetDateTime.now());
-        gameRepository.persist(game);
-        return game;
+        final Game game = Game.create(team1, team2, OffsetDateTime.now(), idempotencyKey);
+        gameRepository.insertIfStartKeyAbsent(game);
+        return gameRepository.findByStartKey(idempotencyKey);
     }
 
     @Transactional
@@ -60,33 +66,46 @@ public class GameService {
     }
 
     @Transactional
-    public Game end(final UUID gameId, final ch.jaros.entity.GameWinner winner) {
-        final Game game = findById(gameId);
-        if (!game.getHasEnded()) {
-            game.endGame(winner);
-            statsService.updateForCompletedGame(game);
+    public Game end(final UUID gameId, final GameWinner winner) {
+        final Game game = gameRepository.findByIdForUpdate(gameId);
+        if (game == null) throw new GameDoesNotExistException("Game does not exist");
+        if (game.getHasEnded()) return game;
+
+        final GameWinner currentWinner = game.calculateWinner();
+        if (winner != currentWinner) {
+            throw new StaleGameWinnerException();
         }
+
+        game.endGame(currentWinner);
+        statsService.updateForCompletedGame(game);
         return game;
     }
 
 
-    public void submitScore(final UUID gameId, final int team1Score, final int team2Score) {
-        submitScore(gameId, team1Score, team2Score, List.of());
+    public GameRound submitScore(final UUID gameId, final int team1Score, final int team2Score,
+                                 final UUID roundKey) {
+        return submitScore(gameId, team1Score, team2Score, roundKey, List.of());
     }
 
     @Transactional
-    public void submitScore(final UUID gameId, final int team1Score, final int team2Score,
-                            final List<TichuCallRequest> tichuCalls) {
-        final Game game = gameRepository.findOngoingGameById(gameId);
+    public GameRound submitScore(final UUID gameId, final int team1Score, final int team2Score,
+                                 final UUID roundKey, final List<TichuCallRequest> tichuCalls) {
+        final Game game = gameRepository.findByIdForUpdate(gameId);
         if (game == null) throw new GameDoesNotExistException("Ongoing game does not exist");
+
+        final GameRound existingRound = gameRoundRepository.findByGameAndRoundKey(gameId, roundKey);
+        if (existingRound != null) return existingRound;
+        if (game.getHasEnded()) throw new GameDoesNotExistException("Ongoing game does not exist");
+        if (game.isPendingFinish()) throw new GameFinishPendingException();
 
         validateTichuCalls(game, tichuCalls);
 
-        final GameRound round = game.addRound(team1Score, team2Score);
+        final GameRound round = game.addRound(team1Score, team2Score, roundKey);
         gameRoundRepository.persist(round);
 
         tichuCalls.forEach(tichuCall -> tichuCallRepository.persist(
                 TichuCall.create(game, findPlayer(game, tichuCall.playerId()), round, tichuCall.successful())));
+        return round;
     }
 
     private void validateTichuCalls(final Game game, final List<TichuCallRequest> tichuCalls) {

@@ -7,6 +7,7 @@ import ch.jaros.BaseTest;
 import ch.jaros.entity.*;
 import ch.jaros.repository.GameRepository;
 import ch.jaros.repository.GameRoundRepository;
+import ch.jaros.repository.TichuCallRepository;
 import ch.jaros.rest.response.GameScoresResponse;
 import ch.jaros.repository.PlayerRepository;
 import ch.jaros.repository.TeamRepository;
@@ -35,6 +36,8 @@ class ScoreSubmitResourceTest extends BaseTest {
     GameRepository gameRepository;
     @Inject
     GameRoundRepository gameRoundRepository;
+    @Inject
+    TichuCallRepository tichuCallRepository;
 
     private final Player player1 = Player.from("Marco");
     private final Player player2 = Player.from("Mia");
@@ -90,6 +93,74 @@ class ScoreSubmitResourceTest extends BaseTest {
         Assertions.assertEquals(0, rounds.getFirst().number());
         Assertions.assertEquals(10, rounds.getFirst().team1());
         Assertions.assertEquals(90, rounds.getFirst().team2());
+    }
+
+    @Test
+    void submitScore_sameRoundKey_reusesRoundAndTichuCalls() {
+        final UUID roundKey = UUID.randomUUID();
+        final SubmitScoreRequest request = new SubmitScoreRequest(roundKey, 100, 0, List.of(
+                new TichuCallRequest(player1.getId(), true)));
+
+        given()
+                .contentType("application/json")
+                .body(request)
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(200)
+                .body("number", is(0));
+
+        given()
+                .contentType("application/json")
+                .body(request)
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(200)
+                .body("number", is(0));
+
+        Assertions.assertEquals(1, gameRoundRepository.count("game.id", game.getId()));
+        Assertions.assertEquals(1, tichuCallRepository.count("game.id", game.getId()));
+    }
+
+    @Test
+    void submitScore_thresholdCrossing_setsPendingAndRejectsNewRound() {
+        final SubmitScoreRequest firstRequest = new SubmitScoreRequest(
+                UUID.randomUUID(), 1000, 0, List.of());
+
+        given()
+                .contentType("application/json")
+                .body(firstRequest)
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(200);
+
+        Assertions.assertTrue(gameRepository.findById(game.getId()).isPendingFinish());
+        given().when().get(String.format("/games/%s", game.getId()))
+                .then().statusCode(200)
+                .body("pendingFinish", is(true));
+
+        given()
+                .contentType("application/json")
+                .body(new SubmitScoreRequest(UUID.randomUUID(), 0, 100, List.of()))
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(409);
+
+        Assertions.assertEquals(1, gameRoundRepository.count("game.id", game.getId()));
+    }
+
+    @Test
+    void submitScore_retryAfterPendingStillReusesCommittedRound() {
+        final SubmitScoreRequest request = new SubmitScoreRequest(
+                UUID.randomUUID(), 1000, 0, List.of());
+
+        given().contentType("application/json")
+                .body(request)
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(200);
+
+        given().contentType("application/json")
+                .body(request)
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(200)
+                .body("number", is(0));
+
+        Assertions.assertEquals(1, gameRoundRepository.count("game.id", game.getId()));
     }
 
     @Test
@@ -274,6 +345,17 @@ class ScoreSubmitResourceTest extends BaseTest {
                 .then()
                 .statusCode(400);
         Assertions.assertEquals(0, gameRepository.findById(game.getId()).getRounds().size());
+    }
+
+    @Test
+    void submitScore_missingRoundKey() {
+        given()
+                .contentType("application/json")
+                .body("{\"team1Score\":100,\"team2Score\":0}")
+                .when().post(String.format("/games/%s/round-results", game.getId()))
+                .then().statusCode(400);
+
+        Assertions.assertEquals(0, gameRoundRepository.count("game.id", game.getId()));
     }
 
     @Transactional

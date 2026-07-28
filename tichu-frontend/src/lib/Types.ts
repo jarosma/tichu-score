@@ -17,6 +17,7 @@ export interface Team {
 }
 
 export interface StartGameRequest {
+  idempotencyKey: UUID;
   team1Id: UUID;
   team2Id: UUID;
 }
@@ -48,6 +49,7 @@ export interface TichuCallRequest {
 }
 
 export interface SubmitScoreRequest {
+  roundKey: UUID;
   team1Score: number;
   team2Score: number;
   tichuCalls?: TichuCallRequest[];
@@ -73,4 +75,5 @@ export interface Game {
   scores: Scores;
   winner: "team1" | "team2" | "draw" | null;
   hasEnded: boolean;
+  pendingFinish: boolean;
 }

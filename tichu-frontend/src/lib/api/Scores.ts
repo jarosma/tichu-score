@@ -1,12 +1,12 @@
-import type { SubmitScoreRequest } from "../Types";
-import { requestVoid } from "./client";
+import type { ScoreRound, SubmitScoreRequest } from "../Types";
+import { requestJson } from "./client";
 import { apiPaths } from "./paths";
 
 export async function submitScore(
   gameId: string,
   data: SubmitScoreRequest,
-): Promise<void> {
-  return requestVoid(
+): Promise<ScoreRound> {
+  return requestJson<ScoreRound>(
     apiPaths.roundResults(gameId),
     {
       method: "POST",

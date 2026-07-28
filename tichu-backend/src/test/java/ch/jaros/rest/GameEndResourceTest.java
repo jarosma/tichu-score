@@ -1,6 +1,7 @@
 package ch.jaros.rest;
 
 import ch.jaros.rest.request.EndGameRequest;
+import ch.jaros.rest.request.SubmitScoreRequest;
 
 import ch.jaros.BaseTest;
 import ch.jaros.entity.Game;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
@@ -49,6 +51,7 @@ class GameEndResourceTest extends BaseTest {
     @Test
     void endGame() {
         final Game game = persistGame(false);
+        addRound(game, 0, 100);
 
         given().contentType("application/json")
                 .body(new EndGameRequest(GameWinner.team2))
@@ -68,6 +71,7 @@ class GameEndResourceTest extends BaseTest {
     @Test
     void endGame_team1Wins() {
         final Game game = persistGame(false);
+        addRound(game, 100, 0);
 
         given().contentType("application/json")
                 .body(new EndGameRequest(GameWinner.team1))
@@ -80,6 +84,49 @@ class GameEndResourceTest extends BaseTest {
         assertEquals(GameWinner.team1, persistedGame.getWinner());
         assertTrue(persistedGame.getHasEnded());
         assertNotNull(persistedGame.getEndedAt());
+    }
+
+    @Test
+    void endGame_draw() {
+        final Game game = persistGame(false);
+        addRound(game, 50, 50);
+
+        given().contentType("application/json")
+                .body(new EndGameRequest(GameWinner.draw))
+                .when().post("/games/" + game.getId() + "/end")
+                .then().statusCode(200)
+                .body("winner", is("draw"))
+                .body("hasEnded", is(true));
+
+        assertEquals(GameWinner.draw, gameRepository.findById(game.getId()).getWinner());
+    }
+
+    @Test
+    void endGame_rejectsStaleWinnerAfterAnotherRound() {
+        final Game game = persistGame(false);
+        given().contentType("application/json")
+                .body(new SubmitScoreRequest(UUID.randomUUID(), 600, 400, List.of()))
+                .when().post("/games/" + game.getId() + "/round-results")
+                .then().statusCode(200);
+        given().contentType("application/json")
+                .body(new SubmitScoreRequest(UUID.randomUUID(), -100, 100, List.of()))
+                .when().post("/games/" + game.getId() + "/round-results")
+                .then().statusCode(200);
+
+        given().contentType("application/json")
+                .body(new EndGameRequest(GameWinner.team1))
+                .when().post("/games/" + game.getId() + "/end")
+                .then().statusCode(409);
+
+        final Game unchanged = gameRepository.findById(game.getId());
+        assertFalse(unchanged.getHasEnded());
+        assertNull(unchanged.getWinner());
+
+        given().contentType("application/json")
+                .body(new EndGameRequest(GameWinner.draw))
+                .when().post("/games/" + game.getId() + "/end")
+                .then().statusCode(200)
+                .body("winner", is("draw"));
     }
 
     @Test
@@ -177,5 +224,11 @@ class GameEndResourceTest extends BaseTest {
         }
         gameRepository.persist(game);
         return game;
+    }
+
+    @Transactional
+    void addRound(final Game game, final int team1Score, final int team2Score) {
+        final Game managedGame = gameRepository.findById(game.getId());
+        managedGame.addRound(team1Score, team2Score);
     }
 }

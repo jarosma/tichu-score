@@ -11,6 +11,7 @@ import { apiKeys } from "@/lib/api/keys";
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { LoadingState } from "@/components/feedback/LoadingState";
+import { ApiError } from "@/lib/api/client";
 
 interface SpectateGameProps {
   newGame?: Game;
@@ -18,6 +19,22 @@ interface SpectateGameProps {
 
 interface SpectateLocationState {
   newGame?: Game;
+}
+
+function calculateWinner(currentGame: Game) {
+  const totalTeam1 = currentGame.scores.rounds.reduce(
+    (acc, round) => acc + round.team1,
+    0,
+  );
+  const totalTeam2 = currentGame.scores.rounds.reduce(
+    (acc, round) => acc + round.team2,
+    0,
+  );
+  return totalTeam1 === totalTeam2
+    ? ("draw" as const)
+    : totalTeam1 > totalTeam2
+      ? ("team1" as const)
+      : ("team2" as const);
 }
 
 export function SpectateGame({ newGame }: SpectateGameProps) {
@@ -50,28 +67,24 @@ export function SpectateGame({ newGame }: SpectateGameProps) {
   const submitScoreUrl = game ? getScoreUrl(game.id) : "";
 
   useEffect(() => {
-    if (!game || game!.hasEnded || !endGameAt1000) return;
-
-    const totalTeam1 = game.scores.rounds.reduce((acc, r) => acc + r.team1, 0);
-    const totalTeam2 = game.scores.rounds.reduce((acc, r) => acc + r.team2, 0);
-
-    if ((totalTeam1 >= 1000 || totalTeam2 >= 1000) && endGameAt1000) {
-      const winner =
-        totalTeam1 === totalTeam2
-          ? "draw"
-          : totalTeam1 > totalTeam2
-            ? "team1"
-            : "team2";
-
-      const timer = setTimeout(() => {
-        setPendingWinner(winner);
-        setEndDialogMode("automatic");
-        setIsEndDialogOpen(true);
-      }, 0);
-
-      return () => clearTimeout(timer);
+    if (
+      !game ||
+      game.hasEnded ||
+      !game.pendingFinish ||
+      !endGameAt1000 ||
+      isEndDialogOpen
+    ) {
+      return;
     }
-  }, [game, endGameAt1000, id]);
+
+    const timer = setTimeout(() => {
+      setPendingWinner(calculateWinner(game));
+      setEndDialogMode("automatic");
+      setIsEndDialogOpen(true);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [game, endGameAt1000, isEndDialogOpen]);
 
   if (error && !game) {
     return (
@@ -89,21 +102,7 @@ export function SpectateGame({ newGame }: SpectateGameProps) {
   const activeGame = game;
 
   function openManualEndDialog() {
-    const totalTeam1 = activeGame.scores.rounds.reduce(
-      (acc, r) => acc + r.team1,
-      0,
-    );
-    const totalTeam2 = activeGame.scores.rounds.reduce(
-      (acc, r) => acc + r.team2,
-      0,
-    );
-    setPendingWinner(
-      totalTeam1 === totalTeam2
-        ? "draw"
-        : totalTeam1 > totalTeam2
-          ? "team1"
-          : "team2",
-    );
+    setPendingWinner(calculateWinner(activeGame));
     setEndDialogMode("manual");
     setIsEndDialogOpen(true);
   }
@@ -118,10 +117,23 @@ export function SpectateGame({ newGame }: SpectateGameProps) {
       setIsEndDialogOpen(false);
       setEndGameAt1000(false);
       await refreshGame(endedGame, { revalidate: false });
-    } catch {
-      setEndError(
-        "Das Spiel konnte nicht beendet werden. Bitte versuche es erneut.",
-      );
+    } catch (reason) {
+      setIsEndDialogOpen(false);
+      setPendingWinner(null);
+      if (reason instanceof ApiError && reason.status === 409) {
+        try {
+          await refreshGame();
+        } catch {
+          // Keep the conflict message when the follow-up refresh also fails.
+        }
+        setEndError(
+          "Der Spielstand hat sich geändert. Bitte prüfe den aktuellen Stand.",
+        );
+      } else {
+        setEndError(
+          "Das Spiel konnte nicht beendet werden. Bitte versuche es erneut.",
+        );
+      }
     } finally {
       setIsEnding(false);
     }

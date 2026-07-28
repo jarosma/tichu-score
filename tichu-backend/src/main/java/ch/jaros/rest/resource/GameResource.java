@@ -30,7 +30,8 @@ public class GameResource {
     @POST
     public Response startGame(@Valid @NotNull final StartGameRequest request) {
         return Response.status(Response.Status.CREATED)
-                .entity(GameResponse.from(gameService.start(request.team1Id(), request.team2Id())))
+                .entity(GameResponse.from(gameService.start(
+                        request.team1Id(), request.team2Id(), request.idempotencyKey())))
                 .build();
     }
 

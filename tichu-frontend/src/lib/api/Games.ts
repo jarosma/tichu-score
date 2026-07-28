@@ -5,13 +5,18 @@ import { apiPaths } from "./paths";
 export async function startGame(
   team1Id: string,
   team2Id: string,
+  idempotencyKey: string,
 ): Promise<Game> {
   return requestJson<Game>(
     apiPaths.games,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ team1Id, team2Id } satisfies StartGameRequest),
+      body: JSON.stringify({
+        idempotencyKey,
+        team1Id,
+        team2Id,
+      } satisfies StartGameRequest),
     },
     "Das Spiel konnte nicht gestartet werden.",
   );

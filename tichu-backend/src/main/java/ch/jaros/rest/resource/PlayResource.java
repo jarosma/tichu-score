@@ -2,6 +2,7 @@ package ch.jaros.rest.resource;
 
 import ch.jaros.rest.PathUuid;
 import ch.jaros.rest.request.SubmitScoreRequest;
+import ch.jaros.rest.response.GameRoundResponse;
 import ch.jaros.service.GameService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -15,6 +16,7 @@ import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 
 import java.util.UUID;
+import java.util.List;
 
 @Path("games/{gameId}/round-results")
 @Produces(MediaType.APPLICATION_JSON)
@@ -28,12 +30,12 @@ public class PlayResource {
     public Response submitScore(@PathParam("gameId") final String gameIdValue,
                                 @NotNull @Valid final SubmitScoreRequest request) {
         final UUID gameId = PathUuid.parse(gameIdValue);
-        if (request.tichuCalls() == null) {
-            gameService.submitScore(gameId, request.team1Score(), request.team2Score());
-        }
-        else {
-            gameService.submitScore(gameId, request.team1Score(), request.team2Score(), request.tichuCalls());
-        }
-        return Response.ok().build();
+        final var round = gameService.submitScore(
+                gameId,
+                request.team1Score(),
+                request.team2Score(),
+                request.roundKey(),
+                request.tichuCalls() == null ? List.of() : request.tichuCalls());
+        return Response.ok(GameRoundResponse.from(round)).build();
     }
 }

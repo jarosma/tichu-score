@@ -5,12 +5,24 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.UUID;
 
 public record SubmitScoreRequest(@NotNull Integer team1Score, @NotNull Integer team2Score,
-                                 List<@NotNull @Valid TichuCallRequest> tichuCalls) {
+                                 List<@NotNull @Valid TichuCallRequest> tichuCalls,
+                                 @NotNull UUID roundKey) {
+
+    public SubmitScoreRequest(final UUID roundKey, final Integer team1Score, final Integer team2Score,
+                              final List<@NotNull @Valid TichuCallRequest> tichuCalls) {
+        this(team1Score, team2Score, tichuCalls, roundKey);
+    }
 
     public SubmitScoreRequest(final Integer team1Score, final Integer team2Score) {
-        this(team1Score, team2Score, List.of());
+        this(team1Score, team2Score, List.of(), UUID.randomUUID());
+    }
+
+    public SubmitScoreRequest(final Integer team1Score, final Integer team2Score,
+                              final List<@NotNull @Valid TichuCallRequest> tichuCalls) {
+        this(team1Score, team2Score, tichuCalls, UUID.randomUUID());
     }
 
     @AssertTrue(message = "Scores must add up to a multiple of 100, while individual scores" +

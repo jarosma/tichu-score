@@ -8,4 +8,8 @@ import java.util.UUID;
 
 @ApplicationScoped
 public class GameRoundRepository implements PanacheRepositoryBase<GameRound, UUID> {
+
+    public GameRound findByGameAndRoundKey(final UUID gameId, final UUID roundKey) {
+        return find("game.id = ?1 and roundKey = ?2", gameId, roundKey).firstResult();
+    }
 }

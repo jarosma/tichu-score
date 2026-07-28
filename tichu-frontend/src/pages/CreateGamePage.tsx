@@ -13,6 +13,7 @@ import { fetchPlayers } from "@/lib/api/Players";
 import { fetchTeams } from "@/lib/api/Teams";
 import { apiKeys } from "@/lib/api/keys";
 import { getCompatiblePairs, areTeamsCompatible } from "@/lib/gameSetup";
+import { createRequestKey } from "@/lib/requestKey";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { InlineMessage } from "@/components/feedback/InlineMessage";
@@ -34,6 +35,7 @@ export function CreateGamePage() {
   const [isQuickStartOpen, setIsQuickStartOpen] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
+  const [startKey, setStartKey] = useState<string | null>(null);
 
   const {
     data: teams,
@@ -77,6 +79,7 @@ export function CreateGamePage() {
   }
 
   function selectTeam(slot: 1 | 2, team: Team) {
+    setStartKey(null);
     if (slot === 1) {
       if (team2 && !areTeamsCompatible(team, team2)) return;
       setTeam1(team);
@@ -90,6 +93,7 @@ export function CreateGamePage() {
   }
 
   function clearTeam(slot: 1 | 2) {
+    setStartKey(null);
     if (slot === 1) {
       setTeam1(null);
       updateSelection(null, team2);
@@ -100,6 +104,7 @@ export function CreateGamePage() {
   }
 
   function handleQuickStartComplete(nextTeam1: Team, nextTeam2: Team) {
+    setStartKey(null);
     setTeam1(nextTeam1);
     setTeam2(nextTeam2);
     updateSelection(nextTeam1, nextTeam2);
@@ -124,7 +129,9 @@ export function CreateGamePage() {
     try {
       setStartError(null);
       setIsStarting(true);
-      const game = await startGame(team1.id, team2.id);
+      const requestKey = startKey ?? createRequestKey();
+      setStartKey(requestKey);
+      const game = await startGame(team1.id, team2.id, requestKey);
       navigate(`/game/${game.id}/spectate`, { state: { newGame: game } });
     } catch {
       setStartError(

@@ -89,6 +89,7 @@ class GameStartResourceTest extends BaseTest {
                 .body("winner", nullValue(GameWinner.class))
                 .body("scores.rounds", empty())
                 .body("hasEnded", is(false))
+                .body("pendingFinish", is(false))
                 .extract().path("id");
 
         final Game persisted = gameRepository.findById(UUID.fromString(gameId));
@@ -100,6 +101,49 @@ class GameStartResourceTest extends BaseTest {
         assertNull(persisted.getWinner());
         assertTrue(persisted.getRounds().isEmpty());
 
+    }
+
+    @Test
+    void startGame_sameIdempotencyKey_reusesGame() {
+        final Player player1 = Player.from("Marco");
+        final Player player2 = Player.from("Mia");
+        final Team team1 = Team.builder()
+                .id(UUID.randomUUID())
+                .name("TeamMaMi")
+                .player1(player1)
+                .player2(player2)
+                .build();
+        transactionalPersist(team1);
+
+        final Player player3 = Player.from("Jana");
+        final Player player4 = Player.from("Martin");
+        final Team team2 = Team.builder()
+                .id(UUID.randomUUID())
+                .name("TeamJaMa")
+                .player1(player3)
+                .player2(player4)
+                .build();
+        transactionalPersist(team2);
+
+        final StartGameRequest request = new StartGameRequest(
+                UUID.randomUUID(), team1.getId(), team2.getId());
+
+        final String firstGameId = given()
+                .contentType("application/json")
+                .body(request)
+                .when().post("/games")
+                .then().statusCode(201)
+                .extract().path("id");
+
+        given()
+                .contentType("application/json")
+                .body(request)
+                .when().post("/games")
+                .then().statusCode(201)
+                .body("id", is(firstGameId));
+
+        assertEquals(1, gameRepository.count());
+        assertNotNull(gameRepository.findById(UUID.fromString(firstGameId)));
     }
 
     @Test

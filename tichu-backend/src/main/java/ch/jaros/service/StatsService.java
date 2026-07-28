@@ -20,18 +20,28 @@ public class StatsService {
 
     @Transactional
     public void updateForCompletedGame(final Game game) {
-        final Team winningTeam = game.getWinner() == GameWinner.team1 ? game.getTeam1() : game.getTeam2();
-        final Team losingTeam = game.getWinner() == GameWinner.team1 ? game.getTeam2() : game.getTeam1();
-        final int winningScore = totalScore(game, game.getWinner() == GameWinner.team1);
-        final int losingScore = totalScore(game, game.getWinner() != GameWinner.team1);
-        final int pointDifference = winningScore - losingScore;
+        if (game.getWinner() == GameWinner.draw) {
+            updateTeamForDraw(game.getTeam1());
+            updateTeamForDraw(game.getTeam2());
+            updatePlayerForDraw(game.getTeam1().getPlayer1());
+            updatePlayerForDraw(game.getTeam1().getPlayer2());
+            updatePlayerForDraw(game.getTeam2().getPlayer1());
+            updatePlayerForDraw(game.getTeam2().getPlayer2());
+        }
+        else {
+            final Team winningTeam = game.getWinner() == GameWinner.team1 ? game.getTeam1() : game.getTeam2();
+            final Team losingTeam = game.getWinner() == GameWinner.team1 ? game.getTeam2() : game.getTeam1();
+            final int winningScore = totalScore(game, game.getWinner() == GameWinner.team1);
+            final int losingScore = totalScore(game, game.getWinner() != GameWinner.team1);
+            final int pointDifference = winningScore - losingScore;
 
-        updateTeam(winningTeam, true, pointDifference);
-        updateTeam(losingTeam, false, pointDifference);
-        updatePlayer(winningTeam.getPlayer1(), true, pointDifference);
-        updatePlayer(winningTeam.getPlayer2(), true, pointDifference);
-        updatePlayer(losingTeam.getPlayer1(), false, pointDifference);
-        updatePlayer(losingTeam.getPlayer2(), false, pointDifference);
+            updateTeam(winningTeam, true, pointDifference);
+            updateTeam(losingTeam, false, pointDifference);
+            updatePlayer(winningTeam.getPlayer1(), true, pointDifference);
+            updatePlayer(winningTeam.getPlayer2(), true, pointDifference);
+            updatePlayer(losingTeam.getPlayer1(), false, pointDifference);
+            updatePlayer(losingTeam.getPlayer2(), false, pointDifference);
+        }
 
         for (final TichuCall tichuCall : tichuCallRepository.findByGame(game.getId())) {
             final int successful = tichuCall.isSuccessful() ? 1 : 0;
@@ -66,6 +76,14 @@ public class StatsService {
         } else {
             stats.setTotalLosses(stats.getTotalLosses() + 1);
         }
+    }
+
+    private void updateTeamForDraw(final Team team) {
+        team.getTeamStats().setTotalGamesPlayed(team.getTeamStats().getTotalGamesPlayed() + 1);
+    }
+
+    private void updatePlayerForDraw(final Player player) {
+        player.getPlayerStats().setTotalGamesPlayed(player.getPlayerStats().getTotalGamesPlayed() + 1);
     }
 
     private int totalScore(final Game game, final boolean team1) {

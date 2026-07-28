@@ -19,6 +19,7 @@ import { apiKeys } from "@/lib/api/keys";
 import { validateRoundScore } from "@/lib/score";
 import { calculateRoundScore } from "@/lib/score";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { createRequestKey } from "@/lib/requestKey";
 
 type ActiveTeam = "team1" | "team2";
 
@@ -39,6 +40,7 @@ export function SubmitScore() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [roundKey, setRoundKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasInput) return;
@@ -126,9 +128,11 @@ export function SubmitScore() {
     setHasInput(false);
     setReplaceNextInput(false);
     setSubmitSuccess(false);
+    setRoundKey(null);
   }
 
   function markInput() {
+    setRoundKey(null);
     setHasInput(true);
     setSubmitSuccess(false);
     setSubmitError(null);
@@ -171,7 +175,14 @@ export function SubmitScore() {
       setSubmitError(null);
       setSubmitSuccess(false);
       setIsSubmitting(true);
-      await submitScore(activeGame.id, { team1Score, team2Score, tichuCalls });
+      const requestKey = roundKey ?? createRequestKey();
+      setRoundKey(requestKey);
+      await submitScore(activeGame.id, {
+        roundKey: requestKey,
+        team1Score,
+        team2Score,
+        tichuCalls,
+      });
       resetRound();
       setSubmitSuccess(true);
       try {

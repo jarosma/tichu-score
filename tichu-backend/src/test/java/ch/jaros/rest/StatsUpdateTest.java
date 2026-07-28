@@ -132,6 +132,41 @@ class StatsUpdateTest extends BaseTest {
         Assertions.assertEquals(1, stats.getUnsuccessfulTichus());
     }
 
+    @Test
+    void drawUpdatesGamesAndTichuStatsWithoutWinLossStats() {
+        final Game game = persistGame();
+        submitRound(game, 50, 50, List.of(
+                new TichuCallRequest(team1.getPlayer1().getId(), true),
+                new TichuCallRequest(team2.getPlayer1().getId(), false)));
+        endGame(game, GameWinner.draw);
+
+        final var team1Stats = teamStatsRepository.findById(team1.getId());
+        final var team2Stats = teamStatsRepository.findById(team2.getId());
+        for (final var stats : List.of(team1Stats, team2Stats)) {
+            Assertions.assertEquals(0, stats.getTotalWins());
+            Assertions.assertEquals(0, stats.getTotalLosses());
+            Assertions.assertEquals(1, stats.getTotalGamesPlayed());
+            Assertions.assertNull(stats.getHighestPointDiffWin());
+        }
+
+        final var playerStats = List.of(
+                playerStatsRepository.findById(team1.getPlayer1().getId()),
+                playerStatsRepository.findById(team1.getPlayer2().getId()),
+                playerStatsRepository.findById(team2.getPlayer1().getId()),
+                playerStatsRepository.findById(team2.getPlayer2().getId()));
+        for (final var stats : playerStats) {
+            Assertions.assertEquals(0, stats.getTotalWins());
+            Assertions.assertEquals(0, stats.getTotalLosses());
+            Assertions.assertEquals(1, stats.getTotalGamesPlayed());
+            Assertions.assertNull(stats.getHighestPointDiffWin());
+        }
+
+        Assertions.assertEquals(1, playerStats.getFirst().getSuccessfulTichus());
+        Assertions.assertEquals(1, playerStats.get(2).getUnsuccessfulTichus());
+        Assertions.assertEquals(1, team1Stats.getSuccessfulTichus());
+        Assertions.assertEquals(1, team2Stats.getUnsuccessfulTichus());
+    }
+
     @Transactional
     Team persistTeam(final String name, final String firstName, final String secondName) {
         final Player first = Player.from(firstName);
