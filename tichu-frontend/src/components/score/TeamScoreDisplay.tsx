@@ -3,16 +3,11 @@ import { cn } from "@/lib/utils";
 interface Props {
   team1Name: string;
   team2Name: string;
-
-  team1Base: number;
-  team2Base: number;
-
-  tichu1: number;
-  tichu2: number;
-
-  hasBonus1: boolean;
-  hasBonus2: boolean;
-
+  team1Score: number;
+  team2Score: number;
+  team1Adjustment: number;
+  team2Adjustment: number;
+  doubleVictory: "team1" | "team2" | null;
   activeTeam: "team1" | "team2";
   onSelectTeam: (team: "team1" | "team2") => void;
 }
@@ -20,58 +15,76 @@ interface Props {
 export function TeamScoreDisplay({
   team1Name,
   team2Name,
-  team1Base,
-  team2Base,
-  tichu1,
-  tichu2,
-  hasBonus1,
-  hasBonus2,
+  team1Score,
+  team2Score,
+  team1Adjustment,
+  team2Adjustment,
+  doubleVictory,
   activeTeam,
   onSelectTeam,
 }: Props) {
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <button
-        onClick={() => onSelectTeam("team1")}
-        className={cn(
-          "rounded-lg text-center border transition h-32",
-          activeTeam === "team1"
-            ? "border-primary bg-primary/10"
-            : "border-border",
-        )}
-      >
-        <div className="text-sm opacity-70">{team1Name}</div>
-        <div className="text-3xl font-bold">{team1Base}</div>
-        {tichu1 !== 0 && (
-          <div className="text-sm opacity-60 mt-1">
-            Tichu {tichu1 > 0 ? "+100" : "−100"}
-          </div>
-        )}
-        {hasBonus1 && (
-          <div className="text-sm opacity-60 mt-1">Doppel-Sieg + 100</div>
-        )}
-      </button>
-
-      <button
-        onClick={() => onSelectTeam("team2")}
-        className={cn(
-          "rounded-lg text-center border transition h-32",
-          activeTeam === "team2"
-            ? "border-primary bg-primary/10"
-            : "border-border",
-        )}
-      >
-        <div className="text-sm opacity-70">{team2Name}</div>
-        <div className="text-3xl font-bold">{team2Base}</div>
-        {tichu2 !== 0 && (
-          <div className="text-sm opacity-60 mt-1">
-            Tichu {tichu2 > 0 ? "+100" : "−100"}
-          </div>
-        )}
-        {hasBonus2 && (
-          <div className="text-sm opacity-60 mt-1">Doppel-Sieg + 100</div>
-        )}
-      </button>
+    <div className="grid grid-cols-2 gap-2">
+      <ScoreCard
+        name={team1Name}
+        score={team1Score}
+        adjustment={team1Adjustment}
+        active={activeTeam === "team1"}
+        special={doubleVictory === "team1"}
+        onSelect={() => onSelectTeam("team1")}
+      />
+      <ScoreCard
+        name={team2Name}
+        score={team2Score}
+        adjustment={team2Adjustment}
+        active={activeTeam === "team2"}
+        special={doubleVictory === "team2"}
+        onSelect={() => onSelectTeam("team2")}
+      />
     </div>
+  );
+}
+
+interface ScoreCardProps {
+  name: string;
+  score: number;
+  adjustment: number;
+  active: boolean;
+  special: boolean;
+  onSelect: () => void;
+}
+
+function ScoreCard({
+  name,
+  score,
+  adjustment,
+  active,
+  special,
+  onSelect,
+}: ScoreCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "min-w-0 rounded-xl border p-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        active ? "border-primary bg-primary/10" : "border-border bg-card",
+      )}
+      aria-pressed={active}
+    >
+      <span className="block truncate text-xs font-medium text-muted-foreground">
+        {name}
+      </span>
+      <span className="mt-1 block text-3xl font-bold tracking-tight">
+        {score}
+      </span>
+      <span className="mt-1 block min-h-4 text-xs text-muted-foreground">
+        {special
+          ? "Doppel-Sieg"
+          : adjustment !== 0
+            ? `Tichu ${adjustment > 0 ? "+" : ""}${adjustment}`
+            : " "}
+      </span>
+    </button>
   );
 }

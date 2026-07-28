@@ -22,7 +22,11 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      aria-label="Toggle dark mode"
+      aria-label={
+        theme === "dark"
+          ? "Helles Design aktivieren"
+          : "Dunkles Design aktivieren"
+      }
     >
       {theme === "dark" ? <Sun /> : <Moon />}
     </Button>

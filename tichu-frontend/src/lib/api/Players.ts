@@ -1,20 +1,54 @@
 import type { Player, PlayerPostRequest } from "../Types";
-
-const hostUrl = import.meta.env.VITE_HOST_URL;
-const backendPort = import.meta.env.VITE_BACKEND_PORT;
-const BASE_URL = hostUrl + ":" + backendPort;
+import { requestJson, requestVoid } from "./client";
+import { apiPaths } from "./paths";
 
 export async function fetchPlayers(): Promise<Player[]> {
-  const res = await fetch(`${BASE_URL}/players`);
-  if (!res.ok) throw new Error("Failed to fetch players");
-  return res.json();
+  return requestJson<Player[]>(
+    apiPaths.players,
+    undefined,
+    "Spieler konnten nicht geladen werden.",
+  );
 }
 
-export async function createPlayer(name: string): Promise<void> {
-  const res = await fetch(`${BASE_URL}/players`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name } as PlayerPostRequest),
-  });
-  if (!res.ok) throw new Error("Failed to create player");
+export async function createPlayer(name: string): Promise<Player> {
+  return requestJson<Player>(
+    apiPaths.players,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name } satisfies PlayerPostRequest),
+    },
+    "Spieler konnte nicht erstellt werden.",
+  );
+}
+
+export async function fetchPlayer(playerId: string): Promise<Player> {
+  return requestJson<Player>(
+    apiPaths.player(playerId),
+    undefined,
+    "Spieler konnte nicht geladen werden.",
+  );
+}
+
+export async function updatePlayerStatus(
+  playerId: string,
+  enabled: boolean,
+): Promise<void> {
+  return requestVoid(
+    apiPaths.player(playerId),
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    },
+    "Spielerstatus konnte nicht geändert werden.",
+  );
+}
+
+export async function deletePlayer(playerId: string): Promise<void> {
+  return requestVoid(
+    apiPaths.player(playerId),
+    { method: "DELETE" },
+    "Spieler konnte nicht gelöscht werden.",
+  );
 }

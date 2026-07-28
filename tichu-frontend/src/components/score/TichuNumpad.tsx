@@ -1,9 +1,7 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
 interface TichuNumpadProps {
-  toggleTichu1: (score: number) => void;
-  toggleTichu2: (score: number) => void;
   setTeam1Base: (score: number) => void;
   setTeam2Base: (score: number) => void;
   team1Base: number;
@@ -11,13 +9,16 @@ interface TichuNumpadProps {
   toggleBonus: (team: "team1" | "team2") => void;
   activeTeam: "team1" | "team2";
   onClear: () => void;
+  onInput: () => void;
+  replaceNextInput?: boolean;
+  onInputConsumed?: () => void;
+  disabled?: boolean;
+  isSubmitting?: boolean;
 }
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
 export function TichuNumpad({
-  toggleTichu1,
-  toggleTichu2,
   setTeam1Base,
   setTeam2Base,
   team1Base,
@@ -25,112 +26,128 @@ export function TichuNumpad({
   toggleBonus,
   activeTeam,
   onClear,
+  onInput,
+  replaceNextInput = false,
+  onInputConsumed,
+  disabled = false,
+  isSubmitting = false,
 }: TichuNumpadProps) {
-  function addDigit(digit: string) {
-    if (activeTeam == "team1") {
-      const next = Number(`${team1Base ?? ""}${digit}`);
-      if (next > 125) return;
-      setTeam1Base(next);
-      updateOther(next);
-    } else {
-      const next = Number(`${team2Base ?? ""}${digit}`);
-      if (next > 125) return;
-      setTeam2Base(next);
-      updateOther(next);
-    }
-  }
+  const addDigit = useCallback(
+    (digit: string) => {
+      function updateOther(score: number) {
+        if (activeTeam === "team1") {
+          setTeam2Base(100 - score);
+        } else {
+          setTeam1Base(100 - score);
+        }
+      }
+
+      if (activeTeam === "team1") {
+        const next = replaceNextInput
+          ? Number(digit)
+          : Number(`${team1Base ?? ""}${digit}`);
+        if (next > 200) return;
+        setTeam1Base(next);
+        updateOther(next);
+        onInput();
+        onInputConsumed?.();
+      } else {
+        const next = replaceNextInput
+          ? Number(digit)
+          : Number(`${team2Base ?? ""}${digit}`);
+        if (next > 200) return;
+        setTeam2Base(next);
+        updateOther(next);
+        onInput();
+        onInputConsumed?.();
+      }
+    },
+    [
+      activeTeam,
+      onInput,
+      onInputConsumed,
+      replaceNextInput,
+      setTeam1Base,
+      setTeam2Base,
+      team1Base,
+      team2Base,
+    ],
+  );
 
   function onNegative() {
-     if (activeTeam == "team1") {
-        setTeam1Base(0 - team1Base);
-        updateOther(0 - team1Base)
-      } else {
-        setTeam2Base(0 - team2Base);
-        updateOther(0 - team2Base)
-      }
-  }
-
-  function updateOther(score: number) {
-    if (activeTeam == "team1") {
-      setTeam2Base(100 - score);
+    if (activeTeam === "team1") {
+      setTeam1Base(0 - team1Base);
+      setTeam2Base(100 + team1Base);
     } else {
-      setTeam1Base(100 - score);
+      setTeam2Base(0 - team2Base);
+      setTeam1Base(100 + team2Base);
     }
+    onInput();
   }
 
   function handleBonusClick() {
     toggleBonus(activeTeam);
-  }
-
-  function handleTichu(number: number) {
-    if (activeTeam == "team1") {
-      toggleTichu1(number);
-    } else {
-      toggleTichu2(number);
-    }
-  }
-
-  function handleKeyDown(e: KeyboardEvent) {
-    if (e.key >= "1" && e.key <= "9") addDigit(e.key);
-    else if (e.key === "0") addDigit("0");
+    onInput();
   }
 
   useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (disabled || isSubmitting) return;
+      if (e.key >= "1" && e.key <= "9") addDigit(e.key);
+      else if (e.key === "0") addDigit("0");
+    }
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [team1Base, team2Base]);
+  }, [addDigit, disabled, isSubmitting]);
 
   return (
-    <div className="space-y-2 w-full max-w-md mx-auto">
-      <div className="grid grid-cols-3 gap-2">
+    <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-1">
+      <div className="grid min-h-0 flex-1 grid-cols-3 grid-rows-4 gap-1">
         {KEYS.map((k) => (
           <Button
             key={k}
             variant="outline"
-            className="h-14 text-xl"
+            className="h-full min-h-9 text-xl sm:min-h-12"
+            disabled={disabled}
             onClick={() => addDigit(k)}
           >
             {k}
           </Button>
         ))}
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
         <Button
           variant="outline"
-          className="h-14"
-          onClick={() => onNegative()}
+          className="h-full min-h-9 sm:min-h-12"
+          onClick={onNegative}
+          disabled={disabled}
         >
           -
         </Button>
         <Button
           variant="outline"
-          className="h-14"
+          className="h-full min-h-9 text-xl sm:min-h-12"
           onClick={() => addDigit("0")}
+          disabled={disabled}
         >
           0
         </Button>
-        <Button variant="destructive" className="h-14" onClick={onClear}>
-          Clear
-        </Button>
-        <Button variant="outline" className="h-14" onClick={handleBonusClick}>
-          Doppel-Sieg
-        </Button>
         <Button
           variant="outline"
-          className="h-14"
-          onClick={() => handleTichu(100)}
+          className="h-full min-h-9 border-destructive/40 text-destructive hover:bg-destructive/10 sm:min-h-12"
+          onClick={onClear}
+          disabled={isSubmitting}
         >
-          +Tichu
-        </Button>
-        <Button
-          variant="outline"
-          className="h-14"
-          onClick={() => handleTichu(-100)}
-        >
-          −Tichu
+          <span className="text-xs">Löschen</span>
         </Button>
       </div>
+      <Button
+        variant="outline"
+        className="h-9 shrink-0 text-sm"
+        onClick={handleBonusClick}
+        disabled={isSubmitting}
+      >
+        Doppel-Sieg
+      </Button>
     </div>
   );
 }

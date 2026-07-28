@@ -1,23 +1,18 @@
-const hostUrl = import.meta.env.VITE_HOST_URL;
-const backendPort = import.meta.env.VITE_BACKEND_PORT;
-const BASE_URL = hostUrl + ":" + backendPort;
-
-interface SubmitScoreRequest {
-  team1Score: number;
-  team2Score: number;
-}
+import type { SubmitScoreRequest } from "../Types";
+import { requestVoid } from "./client";
+import { apiPaths } from "./paths";
 
 export async function submitScore(
   gameId: string,
   data: SubmitScoreRequest,
 ): Promise<void> {
-  const res = await fetch(`${BASE_URL}/play/${gameId}/score`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-
-  if (!res.ok) {
-    throw new Error("Fehler beim Übermitteln des Scores");
-  }
+  return requestVoid(
+    apiPaths.roundResults(gameId),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    },
+    "Fehler beim Übermitteln der Punkte.",
+  );
 }

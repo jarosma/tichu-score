@@ -1,20 +1,18 @@
 # --- Build stage ---
 FROM node:22 AS build
 
-# Define build arguments for environment variables
-ARG TICHU_HOST_URL
-ARG TICHU_BACKEND_PORT
-ARG TICHU_HOST_PORT
+# Define build arguments for browser configuration
+ARG TICHU_PUBLIC_URL=http://localhost:81
+ARG TICHU_API_BASE_URL=/api
 
-# Set environment variables during the build process
-ENV VITE_HOST_URL=$TICHU_HOST_URL
-ENV VITE_BACKEND_PORT=$TICHU_BACKEND_PORT
-ENV VITE_HOST_PORT=$TICHU_HOST_PORT
+# Set Vite variables during the build process
+ENV VITE_PUBLIC_URL=$TICHU_PUBLIC_URL
+ENV VITE_API_BASE_URL=$TICHU_API_BASE_URL
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 RUN npm run build
@@ -34,4 +32,3 @@ COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
-
