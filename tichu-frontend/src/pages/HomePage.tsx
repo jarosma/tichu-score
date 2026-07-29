@@ -34,7 +34,7 @@ export function HomePage() {
         <h1
           id="page-heading"
           tabIndex={-1}
-          className="text-4xl font-semibold tracking-tight sm:text-5xl"
+          className="text-4xl font-semibold tracking-tight focus:outline-none sm:text-5xl"
         >
           Tichu
         </h1>

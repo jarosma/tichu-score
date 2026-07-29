@@ -13,7 +13,7 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
         <h1
           id="page-heading"
           tabIndex={-1}
-          className="text-3xl font-semibold tracking-tight"
+          className="text-3xl font-semibold tracking-tight focus:outline-none"
         >
           {title}
         </h1>

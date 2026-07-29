@@ -147,7 +147,7 @@ export function SpectateGame() {
             ref={endHeadingRef}
             id="page-heading"
             tabIndex={-1}
-            className="text-3xl font-semibold tracking-tight sm:text-4xl"
+            className="text-3xl font-semibold tracking-tight focus:outline-none sm:text-4xl"
           >
             Spiel anschauen
           </h1>

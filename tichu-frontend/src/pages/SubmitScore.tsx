@@ -160,7 +160,6 @@ export function SubmitScore() {
   );
   const validation = validateRoundScore(team1Score, team2Score, hasInput);
   const isValid = validation.valid;
-  const invalidScoreMessage = hasInput && !isValid ? validation.message : null;
 
   function resetRound() {
     setTeam1Base(0);
@@ -198,7 +197,12 @@ export function SubmitScore() {
   }
 
   async function handleSubmit() {
-    if (!isValid || activeGame.pendingFinish || activeGame.hasEnded) return;
+    if (activeGame.pendingFinish || activeGame.hasEnded) return;
+    if (!isValid) {
+      setSubmitSuccess(false);
+      setSubmitError(validation.message);
+      return;
+    }
 
     const tichuCalls = [...team1Players, ...team2Players]
       .filter(
@@ -352,22 +356,9 @@ export function SubmitScore() {
               onChange={handleCallChange}
             />
 
-            {invalidScoreMessage && (
-              <InlineMessage
-                id="score-validation-message"
-                variant="error"
-                className="px-3 py-2 text-xs"
-              >
-                {invalidScoreMessage}
-              </InlineMessage>
-            )}
-
             <Button
               className="mt-auto h-12 w-full text-base"
-              disabled={!isValid || activeGame.pendingFinish || isSubmitting}
-              aria-describedby={
-                invalidScoreMessage ? "score-validation-message" : undefined
-              }
+              disabled={!hasInput || activeGame.pendingFinish || isSubmitting}
               onClick={() => void handleSubmit()}
             >
               {isSubmitting ? "Wird gespeichert ..." : "Runde speichern"}

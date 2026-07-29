@@ -184,7 +184,7 @@ describe("SubmitScore validation and short viewport structure", () => {
     expect(saveButton).not.toHaveAttribute("aria-describedby");
   });
 
-  it("explains an invalid entered score and associates it with Save", async () => {
+  it("shows invalid score feedback only after saving", async () => {
     mocks.fetchGame.mockResolvedValue(game());
     renderScore();
 
@@ -194,13 +194,17 @@ describe("SubmitScore validation and short viewport structure", () => {
     fireEvent.click(screen.getByRole("button", { name: /^1$/ }));
 
     expect(
+      screen.queryByText("Beide Teamwerte müssen durch 5 teilbar sein."),
+    ).not.toBeInTheDocument();
+    expect(saveButton).not.toBeDisabled();
+    expect(saveButton).not.toHaveAttribute("aria-describedby");
+
+    fireEvent.click(saveButton);
+
+    expect(
       await screen.findByText("Beide Teamwerte müssen durch 5 teilbar sein."),
     ).toBeInTheDocument();
-    expect(saveButton).toBeDisabled();
-    expect(saveButton).toHaveAttribute(
-      "aria-describedby",
-      "score-validation-message",
-    );
+    expect(mocks.submitScore).not.toHaveBeenCalled();
   });
 
   it("keeps the score controls in a scroll-capable mobile structure", async () => {
