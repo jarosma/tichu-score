@@ -4,6 +4,7 @@ import {
   Eye,
   Home,
   Settings2,
+  Music2,
   Trophy,
 } from "lucide-react";
 import {
@@ -17,6 +18,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { focusIfConnected } from "@/lib/focus";
 import { cn } from "@/lib/utils";
+import { SpotifyPlaybackProvider } from "@/components/spotify/SpotifyPlaybackProvider";
 
 interface AppShellProps {
   children: ReactNode;
@@ -28,6 +30,7 @@ const navigation = [
   { to: "/game/spectate", label: "Spiel anschauen", icon: Eye },
   { to: "/manage", label: "Verwalten", icon: Settings2 },
   { to: "/statistics", label: "Statistiken", icon: BarChart3 },
+  { to: "/spotify", label: "Spotify", icon: Music2 },
 ];
 
 function useRouteFocusManager() {
@@ -140,121 +143,123 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   if (isScoreRoute) {
-    return <>{children}</>;
+    return <SpotifyPlaybackProvider>{children}</SpotifyPlaybackProvider>;
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r bg-card lg:flex">
-        <div className="flex h-20 items-center border-b px-7">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-              Tichu
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">Punktestand</p>
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-1 p-4" aria-label="Hauptnavigation">
-          {navigation.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                )
-              }
-            >
-              <Icon className="size-4" />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="flex items-center justify-between border-t p-4">
-          <span className="text-xs text-muted-foreground">Version 1.0.0</span>
-          <ThemeToggle />
-        </div>
-      </aside>
-
-      <div className="flex min-h-[100dvh] flex-col lg:pl-64">
-        <header className="flex h-16 items-center gap-3 border-b px-5 lg:hidden">
-          {canGoBack && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={goBack}
-              aria-label="Zurück"
-            >
-              <ArrowLeft />
-            </Button>
-          )}
-          <div className="flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-              Tichu
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Punktestand · Version 1.0.0
-            </p>
-          </div>
-          <ThemeToggle />
-        </header>
-
-        <nav
-          className="flex gap-1 overflow-x-auto border-b px-4 py-2 lg:hidden"
-          aria-label="Hauptnavigation"
-        >
-          {navigation.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                cn(
-                  "flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                )
-              }
-            >
-              <Icon className="size-4" />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className={cn(
-            "mx-auto w-full max-w-7xl",
-            isViewportRoute
-              ? "viewport-main flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 py-3 sm:px-5 sm:py-4 lg:px-12 lg:py-6"
-              : "min-h-screen px-5 py-8 sm:px-8 lg:px-12",
-          )}
-        >
-          {canGoBack && (
-            <div
-              className={cn(
-                "hidden lg:block",
-                isViewportRoute ? "mb-2" : "mb-8",
-              )}
-            >
-              <Button variant="ghost" onClick={goBack}>
-                <ArrowLeft />
-                Zurück
-              </Button>
+    <SpotifyPlaybackProvider>
+      <div className="min-h-[100dvh] bg-background text-foreground">
+        <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r bg-card lg:flex">
+          <div className="flex h-20 items-center border-b px-7">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
+                Tichu
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">Punktestand</p>
             </div>
-          )}
-          {children}
-        </main>
+          </div>
+
+          <nav className="flex-1 space-y-1 p-4" aria-label="Hauptnavigation">
+            {navigation.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  )
+                }
+              >
+                <Icon className="size-4" />
+                {label}
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="flex items-center justify-between border-t p-4">
+            <span className="text-xs text-muted-foreground">Version 1.0.0</span>
+            <ThemeToggle />
+          </div>
+        </aside>
+
+        <div className="flex min-h-[100dvh] flex-col lg:pl-64">
+          <header className="flex h-16 items-center gap-3 border-b px-5 lg:hidden">
+            {canGoBack && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={goBack}
+                aria-label="Zurück"
+              >
+                <ArrowLeft />
+              </Button>
+            )}
+            <div className="flex-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
+                Tichu
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Punktestand · Version 1.0.0
+              </p>
+            </div>
+            <ThemeToggle />
+          </header>
+
+          <nav
+            className="flex gap-1 overflow-x-auto border-b px-4 py-2 lg:hidden"
+            aria-label="Hauptnavigation"
+          >
+            {navigation.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  cn(
+                    "flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  )
+                }
+              >
+                <Icon className="size-4" />
+                {label}
+              </NavLink>
+            ))}
+          </nav>
+
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className={cn(
+              "mx-auto w-full max-w-7xl",
+              isViewportRoute
+                ? "viewport-main flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 py-3 sm:px-5 sm:py-4 lg:px-12 lg:py-6"
+                : "min-h-screen px-5 py-8 sm:px-8 lg:px-12",
+            )}
+          >
+            {canGoBack && (
+              <div
+                className={cn(
+                  "hidden lg:block",
+                  isViewportRoute ? "mb-2" : "mb-8",
+                )}
+              >
+                <Button variant="ghost" onClick={goBack}>
+                  <ArrowLeft />
+                  Zurück
+                </Button>
+              </div>
+            )}
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </SpotifyPlaybackProvider>
   );
 }

@@ -60,7 +60,7 @@ Weitere optionale Variablen:
 - `TICHU_HOST_IP`: Host-IP, die für Public URL und QR-Codes verwendet wird
 - `TICHU_NETWORK_INTERFACE`: Netzwerkadapter für die automatische Erkennung
 - `TICHU_PUBLIC_URL`: vollständige URL inklusive Port, überschreibt die IP-Erkennung
-- `TICHU_CORS_ORIGINS`: erlaubte Browser-Origin, standardmäßig die Public URL
+- `TICHU_CORS_ORIGINS`: erlaubte Browser-Origins, standardmäßig Loopback plus Public URL
 - `SITE_URL`: URL, die nach dem Start im Browser geöffnet wird
 
 ## Stoppen und Zurücksetzen

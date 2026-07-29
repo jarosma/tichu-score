@@ -78,8 +78,9 @@ else
 fi
 
 export TICHU_PUBLIC_URL
-export TICHU_CORS_ORIGINS="${TICHU_CORS_ORIGINS:-$TICHU_PUBLIC_URL}"
-TICHU_SITE_URL="${SITE_URL:-$TICHU_PUBLIC_URL}"
+default_cors_origins="http://127.0.0.1:81,http://localhost:81,$TICHU_PUBLIC_URL"
+export TICHU_CORS_ORIGINS="${TICHU_CORS_ORIGINS:-$default_cors_origins}"
+TICHU_SITE_URL="${SITE_URL:-http://127.0.0.1:81}"
 
 docker compose config --quiet
 

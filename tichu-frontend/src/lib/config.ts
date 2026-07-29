@@ -9,3 +9,7 @@ export const PUBLIC_URL = (
 export function getScoreUrl(gameId: string) {
   return `${PUBLIC_URL}/game/${gameId}/score`;
 }
+
+export function getSpotifyJamShareUrl(spotifyJamUrl: string) {
+  return `${PUBLIC_URL}/spotify?jam=${encodeURIComponent(spotifyJamUrl)}`;
+}

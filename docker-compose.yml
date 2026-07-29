@@ -6,6 +6,8 @@ services:
       args:
         TICHU_PUBLIC_URL: ${TICHU_PUBLIC_URL:-}
         TICHU_API_BASE_URL: /api
+        TICHU_SPOTIFY_CLIENT_ID: ${TICHU_SPOTIFY_CLIENT_ID:-cb28f60d363d40e2aa2b6e8049f281e3}
+        TICHU_SPOTIFY_REDIRECT_URI: ${TICHU_SPOTIFY_REDIRECT_URI:-http://127.0.0.1:81/spotify}
     ports:
       - "81:80"
     depends_on:
@@ -25,7 +27,7 @@ services:
       QUARKUS_DATASOURCE_PASSWORD: tichupassword
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://db:5432/tichu
       QUARKUS_PROFILE: prod
-      QUARKUS_HTTP_CORS_ORIGINS: ${TICHU_CORS_ORIGINS:-http://localhost:81}
+      QUARKUS_HTTP_CORS_ORIGINS: ${TICHU_CORS_ORIGINS:-http://127.0.0.1:81,http://localhost:81}
     depends_on:
       db:
         condition: service_healthy

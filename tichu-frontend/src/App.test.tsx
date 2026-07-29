@@ -30,6 +30,9 @@ vi.mock("@/pages/TeamsPage", () => ({
 vi.mock("@/pages/StatisticsPage", () => ({
   StatisticsPage: () => <p>statistics route</p>,
 }));
+vi.mock("@/pages/SpotifyPage", () => ({
+  SpotifyPage: () => <p>spotify route</p>,
+}));
 vi.mock("@/pages/FeaturePlaceholderPage", () => ({
   FeaturePlaceholderPage: ({ title }: { title: string }) => <p>{title}</p>,
 }));
@@ -42,6 +45,7 @@ describe("application routing", () => {
   it.each([
     ["/game/game-1/score", "score route"],
     ["/game/game-1/spectate", "spectate route"],
+    ["/spotify", "spotify route"],
   ])("supports direct %s navigation", (path, content) => {
     window.history.pushState({}, "", path);
 

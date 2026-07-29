@@ -91,7 +91,8 @@ The rules are validated at the REST boundary and again in the domain model.
 
 Set `TICHU_CORS_ORIGINS` to the allowed browser origin or comma-separated origins
 before starting the application with the `prod` profile. The root
-`docker-compose.yml` uses `http://localhost:81` as a local deployment default.
+`docker-compose.yml` allows both `http://127.0.0.1:81` and `http://localhost:81`
+by default; `start-tichu.sh` additionally allows the detected LAN URL.
 
 The production container uses `src/main/docker/Dockerfile.jvm`.
 

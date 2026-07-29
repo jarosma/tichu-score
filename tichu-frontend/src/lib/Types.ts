@@ -77,3 +77,23 @@ export interface Game {
   hasEnded: boolean;
   pendingFinish: boolean;
 }
+
+export interface SpotifyPlayback {
+  available: boolean;
+  playing: boolean;
+  trackId: string | null;
+  trackName: string | null;
+  artists: string[];
+  albumName: string | null;
+  imageUrl: string | null;
+  spotifyUrl: string | null;
+  progressMs: number | null;
+  durationMs: number | null;
+  deviceName: string | null;
+  contextName: string | null;
+}
+
+export interface SpotifyProfile {
+  displayName: string | null;
+  product: string | null;
+}

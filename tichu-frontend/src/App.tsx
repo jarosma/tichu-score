@@ -9,6 +9,7 @@ import { FeaturePlaceholderPage } from "@/pages/FeaturePlaceholderPage";
 import { PlayersPage } from "@/pages/PlayersPage";
 import { TeamsPage } from "@/pages/TeamsPage";
 import { StatisticsPage } from "@/pages/StatisticsPage";
+import { SpotifyPage } from "@/pages/SpotifyPage";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="/manage/players" element={<PlayersPage />} />
           <Route path="/manage/teams" element={<TeamsPage />} />
           <Route path="/statistics" element={<StatisticsPage />} />
+          <Route path="/spotify" element={<SpotifyPage />} />
           <Route
             path="*"
             element={
