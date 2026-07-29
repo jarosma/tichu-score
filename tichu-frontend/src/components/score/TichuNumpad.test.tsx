@@ -36,4 +36,12 @@ describe("TichuNumpad keyboard listener", () => {
     fireEvent.keyDown(window, { key: "1" });
     expect(setTeam1Base).toHaveBeenCalledWith(1);
   });
+
+  it("uses the selected German Doppelsieg label", () => {
+    renderNumpad();
+
+    expect(
+      screen.getByRole("button", { name: "Doppelsieg" }),
+    ).toBeInTheDocument();
+  });
 });

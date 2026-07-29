@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getApiErrorMessage, localizeApiError, requestJson } from "./client";
+import {
+  ApiError,
+  getApiErrorMessage,
+  jsonRequest,
+  localizeApiError,
+  requestJson,
+} from "./client";
+import { isPlayerArray } from "./validation";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -51,6 +58,7 @@ describe("requestJson", () => {
     const result = requestJson(
       "/players",
       undefined,
+      isPlayerArray,
       "Spieler konnte nicht erstellt werden.",
     );
 
@@ -79,8 +87,90 @@ describe("requestJson", () => {
       ),
     );
 
-    await expect(requestJson("/games/game-1/round-results")).rejects.toThrow(
-      "Tichu-Angaben sind ungültig",
+    await expect(
+      requestJson("/games/game-1/round-results", undefined, isPlayerArray),
+    ).rejects.toThrow("Tichu-Angaben sind ungültig");
+  });
+
+  it("returns valid JSON only after response validation", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify([
+              { id: "player-1", name: "Anna", elo: null, enabled: true },
+            ]),
+            { status: 200 },
+          ),
+        ),
+    );
+
+    await expect(
+      requestJson("/players", undefined, isPlayerArray),
+    ).resolves.toEqual([
+      { id: "player-1", name: "Anna", elo: null, enabled: true },
+    ]);
+  });
+
+  it("turns malformed JSON and malformed shapes into German ApiErrors", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("{broken", { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([{ id: "player-1" }]), { status: 200 }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestJson("/players", undefined, isPlayerArray),
+    ).rejects.toEqual(
+      expect.objectContaining({
+        name: "ApiError",
+        message: "Die Serverantwort ist kein gültiges JSON.",
+      }),
+    );
+    await expect(
+      requestJson("/players", undefined, isPlayerArray),
+    ).rejects.toEqual(
+      expect.objectContaining({
+        name: "ApiError",
+        message: "Die Serverantwort hat ein ungültiges Format.",
+      }),
+    );
+  });
+
+  it("handles primitive error payloads without crashing the error parser", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response("null", { status: 500 })),
+    );
+
+    await expect(
+      requestJson("/players", undefined, isPlayerArray),
+    ).rejects.toEqual(
+      expect.objectContaining({
+        name: "ApiError",
+        message: "Der Server konnte die Anfrage nicht verarbeiten.",
+      }),
+    );
+  });
+});
+
+describe("jsonRequest", () => {
+  it("creates JSON requests and rejects malformed request payloads", () => {
+    expect(jsonRequest("POST", { name: "Anna" })).toEqual({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: '{"name":"Anna"}',
+    });
+    expect(() => jsonRequest("POST", null)).toThrow(ApiError);
+
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    expect(() => jsonRequest("POST", circular)).toThrow(
+      "Die Anfrage konnte nicht erstellt werden.",
     );
   });
 });

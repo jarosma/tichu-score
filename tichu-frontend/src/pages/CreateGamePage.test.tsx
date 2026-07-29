@@ -90,7 +90,7 @@ describe("CreateGamePage", () => {
         screen.getByText(/Quick Start ist derzeit nicht möglich/),
       ).toBeInTheDocument();
       expect(
-        screen.queryByRole("button", { name: "Zufällige Partie" }),
+        screen.queryByRole("button", { name: "Zufällige Teams" }),
       ).not.toBeInTheDocument();
     },
   );
@@ -99,7 +99,7 @@ describe("CreateGamePage", () => {
     renderPage(playersWithActiveCount(4));
 
     expect(
-      screen.getByRole("button", { name: "Zufällige Partie" }),
+      screen.getByRole("button", { name: "Zufällige Teams" }),
     ).toBeEnabled();
   });
 });

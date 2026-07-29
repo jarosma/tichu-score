@@ -1,5 +1,5 @@
 # --- Build stage ---
-FROM node:22 AS build
+FROM node:22.14.0-bookworm-slim@sha256:1c18d9ab3af4585870b92e4dbc5cac5a0dc77dd13df1a5905cea89fc720eb05b AS build
 
 # Define build arguments for browser configuration
 ARG TICHU_PUBLIC_URL=
@@ -18,7 +18,7 @@ COPY . .
 RUN npm run build
 
 # --- Production stage ---
-FROM nginx:1.25
+FROM nginx:1.27.4-alpine@sha256:4ff102c5d78d254a6f0da062b3cf39eaf07f01eec0927fd21e219d0af8bc0591
 
 # Remove default nginx page
 RUN rm -rf /usr/share/nginx/html/*

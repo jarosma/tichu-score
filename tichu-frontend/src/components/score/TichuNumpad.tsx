@@ -159,7 +159,7 @@ export function TichuNumpad({
         onClick={handleBonusClick}
         disabled={disabled || isSubmitting}
       >
-        Doppel-Sieg
+        Doppelsieg
       </Button>
     </div>
   );

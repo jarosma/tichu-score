@@ -151,7 +151,7 @@ export function AppShell({ children }: AppShellProps) {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
               Tichu
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">Scoreboard</p>
+            <p className="mt-1 text-sm text-muted-foreground">Punktestand</p>
           </div>
         </div>
 
@@ -199,7 +199,7 @@ export function AppShell({ children }: AppShellProps) {
               Tichu
             </p>
             <p className="text-xs text-muted-foreground">
-              Scoreboard · Version 1.0.0
+              Punktestand · Version 1.0.0
             </p>
           </div>
           <ThemeToggle />

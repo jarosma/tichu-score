@@ -13,10 +13,6 @@ import { ErrorState } from "@/components/feedback/ErrorState";
 import { LoadingState } from "@/components/feedback/LoadingState";
 import { ApiError } from "@/lib/api/client";
 
-interface SpectateGameProps {
-  newGame?: Game;
-}
-
 interface SpectateLocationState {
   newGame?: Game;
 }
@@ -37,11 +33,11 @@ function calculateWinner(currentGame: Game) {
       : ("team2" as const);
 }
 
-export function SpectateGame({ newGame }: SpectateGameProps) {
+export function SpectateGame() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const stateGame = (location.state as SpectateLocationState | null)?.newGame;
-  const initialGame = newGame ?? stateGame;
+  const initialGame = stateGame;
   const [endGameAt1000, setEndGameAt1000] = useState(true);
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
   const [endDialogMode, setEndDialogMode] = useState<"automatic" | "manual">(

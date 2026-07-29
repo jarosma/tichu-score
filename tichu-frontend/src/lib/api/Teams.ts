@@ -1,11 +1,13 @@
 import type { Team, TeamCreateRequest } from "../Types";
-import { requestJson, requestVoid } from "./client";
+import { jsonRequest, requestJson, requestVoid } from "./client";
 import { apiPaths } from "./paths";
+import { isTeam, isTeamArray } from "./validation";
 
 export async function fetchTeams(): Promise<Team[]> {
   return requestJson<Team[]>(
     apiPaths.teams,
     undefined,
+    isTeamArray,
     "Teams konnten nicht geladen werden.",
   );
 }
@@ -13,20 +15,9 @@ export async function fetchTeams(): Promise<Team[]> {
 export async function createTeam(req: TeamCreateRequest): Promise<Team> {
   return requestJson<Team>(
     apiPaths.teams,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req),
-    },
+    jsonRequest("POST", req),
+    isTeam,
     "Team konnte nicht erstellt werden.",
-  );
-}
-
-export async function fetchTeam(teamId: string): Promise<Team> {
-  return requestJson<Team>(
-    apiPaths.team(teamId),
-    undefined,
-    "Team konnte nicht geladen werden.",
   );
 }
 
@@ -36,11 +27,7 @@ export async function updateTeamStatus(
 ): Promise<void> {
   return requestVoid(
     apiPaths.team(teamId),
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled }),
-    },
+    jsonRequest("PATCH", { enabled }),
     "Teamstatus konnte nicht geändert werden.",
   );
 }

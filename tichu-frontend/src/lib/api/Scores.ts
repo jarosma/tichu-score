@@ -1,6 +1,7 @@
 import type { ScoreRound, SubmitScoreRequest } from "../Types";
-import { requestJson } from "./client";
+import { jsonRequest, requestJson } from "./client";
 import { apiPaths } from "./paths";
+import { isScoreRound } from "./validation";
 
 export async function submitScore(
   gameId: string,
@@ -8,11 +9,8 @@ export async function submitScore(
 ): Promise<ScoreRound> {
   return requestJson<ScoreRound>(
     apiPaths.roundResults(gameId),
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    },
+    jsonRequest("POST", data),
+    isScoreRound,
     "Fehler beim Übermitteln der Punkte.",
   );
 }

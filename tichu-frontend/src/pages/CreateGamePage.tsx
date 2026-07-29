@@ -265,7 +265,7 @@ export function CreateGamePage() {
                   }}
                 >
                   <Shuffle />
-                  Zufällige Partie
+                  Zufällige Teams
                 </Button>
               </div>
 

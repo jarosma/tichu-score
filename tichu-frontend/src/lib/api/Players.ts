@@ -1,11 +1,13 @@
 import type { Player, PlayerPostRequest } from "../Types";
-import { requestJson, requestVoid } from "./client";
+import { jsonRequest, requestJson, requestVoid } from "./client";
 import { apiPaths } from "./paths";
+import { isPlayer, isPlayerArray } from "./validation";
 
 export async function fetchPlayers(): Promise<Player[]> {
   return requestJson<Player[]>(
     apiPaths.players,
     undefined,
+    isPlayerArray,
     "Spieler konnten nicht geladen werden.",
   );
 }
@@ -13,20 +15,9 @@ export async function fetchPlayers(): Promise<Player[]> {
 export async function createPlayer(name: string): Promise<Player> {
   return requestJson<Player>(
     apiPaths.players,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name } satisfies PlayerPostRequest),
-    },
+    jsonRequest("POST", { name } satisfies PlayerPostRequest),
+    isPlayer,
     "Spieler konnte nicht erstellt werden.",
-  );
-}
-
-export async function fetchPlayer(playerId: string): Promise<Player> {
-  return requestJson<Player>(
-    apiPaths.player(playerId),
-    undefined,
-    "Spieler konnte nicht geladen werden.",
   );
 }
 
@@ -36,11 +27,7 @@ export async function updatePlayerStatus(
 ): Promise<void> {
   return requestVoid(
     apiPaths.player(playerId),
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled }),
-    },
+    jsonRequest("PATCH", { enabled }),
     "Spielerstatus konnte nicht geändert werden.",
   );
 }

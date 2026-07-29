@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { SWRConfig } from "swr";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -76,5 +76,38 @@ describe("SpectateGame ended controls", () => {
     expect(
       screen.queryByRole("button", { name: "Spiel beenden" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("keeps the QR link on the direct spectator route for an ongoing game", async () => {
+    mocks.fetchGame.mockResolvedValue({
+      ...game(),
+      endedAt: null,
+      winner: null,
+      hasEnded: false,
+    });
+    render(
+      <SWRConfig
+        value={{
+          provider: () => new Map(),
+          initFocus: () => undefined,
+          initReconnect: () => undefined,
+        }}
+      >
+        <MemoryRouter initialEntries={["/game/game-1/spectate"]}>
+          <Routes>
+            <Route path="/game/:id/spectate" element={<SpectateGame />} />
+          </Routes>
+        </MemoryRouter>
+      </SWRConfig>,
+    );
+
+    const trigger = await screen.findByRole("button", {
+      name: "Punkteingabe per QR-Code öffnen",
+    });
+    fireEvent.click(trigger);
+
+    expect(
+      await screen.findByRole("link", { name: /\/game\/game-1\/score/ }),
+    ).toHaveAttribute("href", expect.stringContaining("/game/game-1/score"));
   });
 });

@@ -1,3 +1,5 @@
+import type { ResponseValidator } from "./validation";
+
 const API_BASE_URL = (
   (import.meta.env.VITE_API_BASE_URL as string | undefined) || "/api"
 ).replace(/\/$/, "");
@@ -19,26 +21,19 @@ export function getApiErrorMessage(
   return reason instanceof ApiError ? reason.message : fallbackMessage;
 }
 
-interface ApiErrorPayload {
-  code?: unknown;
-  errorCode?: unknown;
-  message?: unknown;
-  parameterViolations?: unknown;
-  propertyViolations?: unknown;
-  classViolations?: unknown;
-}
-
 function asMessage(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function violationMessages(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value
     .map((violation) =>
-      typeof violation === "object" && violation !== null
-        ? asMessage((violation as { message?: unknown }).message)
-        : undefined,
+      isRecord(violation) ? asMessage(violation.message) : undefined,
     )
     .filter((message): message is string => Boolean(message));
 }
@@ -50,7 +45,9 @@ function parseErrorBody(body: string): {
   if (!body.trim()) return {};
 
   try {
-    const data = JSON.parse(body) as ApiErrorPayload;
+    const data: unknown = JSON.parse(body);
+    if (!isRecord(data)) return {};
+
     const detail = [
       ...violationMessages(data.parameterViolations),
       ...violationMessages(data.propertyViolations),
@@ -146,7 +143,12 @@ async function createApiError(
   response: Response,
   fallbackMessage: string,
 ): Promise<ApiError> {
-  const body = await response.text();
+  let body = "";
+  try {
+    body = await response.text();
+  } catch {
+    // The status still provides a safe, localized fallback.
+  }
   const { code, detail } = parseErrorBody(body);
   if (import.meta.env.DEV && detail) {
     console.debug("API-Fehlerdetails", { status: response.status, detail });
@@ -157,16 +159,68 @@ async function createApiError(
   );
 }
 
-export async function apiFetch(
-  path: string,
-  init?: RequestInit,
-): Promise<Response> {
+async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   return fetch(`${API_BASE_URL}${path}`, init);
+}
+
+export function jsonRequest(
+  method: "POST" | "PATCH",
+  payload: unknown,
+): RequestInit {
+  if (
+    typeof payload !== "object" ||
+    payload === null ||
+    Array.isArray(payload)
+  ) {
+    throw new ApiError("Die Anfrage konnte nicht erstellt werden.", 0);
+  }
+
+  let body: string | undefined;
+  try {
+    body = JSON.stringify(payload);
+  } catch {
+    throw new ApiError("Die Anfrage konnte nicht erstellt werden.", 0);
+  }
+
+  if (body === undefined) {
+    throw new ApiError("Die Anfrage konnte nicht erstellt werden.", 0);
+  }
+
+  return {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body,
+  };
+}
+
+async function readJsonResponse<T>(
+  response: Response,
+  validateResponse: ResponseValidator<T>,
+): Promise<T> {
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new ApiError(
+      "Die Serverantwort ist kein gültiges JSON.",
+      response.status,
+    );
+  }
+
+  if (!validateResponse(payload)) {
+    throw new ApiError(
+      "Die Serverantwort hat ein ungültiges Format.",
+      response.status,
+    );
+  }
+
+  return payload;
 }
 
 export async function requestJson<T>(
   path: string,
-  init?: RequestInit,
+  init: RequestInit | undefined,
+  validateResponse: ResponseValidator<T>,
   fallbackMessage = "Die Anfrage ist fehlgeschlagen.",
 ): Promise<T> {
   let response: Response;
@@ -177,7 +231,7 @@ export async function requestJson<T>(
   }
 
   if (!response.ok) throw await createApiError(response, fallbackMessage);
-  return response.json() as Promise<T>;
+  return readJsonResponse(response, validateResponse);
 }
 
 export async function requestVoid(
@@ -193,11 +247,4 @@ export async function requestVoid(
   }
 
   if (!response.ok) throw await createApiError(response, fallbackMessage);
-}
-
-export async function throwApiError(
-  response: Response,
-  fallbackMessage: string,
-): Promise<never> {
-  throw await createApiError(response, fallbackMessage);
 }

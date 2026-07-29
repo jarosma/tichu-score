@@ -1,73 +1,61 @@
-# React + TypeScript + Vite
+# Tichu Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Die React-Anwendung ist die deutsche Weboberflaeche fuer Spielstart,
+Punktestand, Punkteingabe, Verwaltung und Statistiken. Die API wird im
+Entwicklungsserver unter `/api` proxied.
 
-Currently, two official plugins are available:
+## Voraussetzungen
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js `>=22.12.0 <23` und npm `>=10` (Docker-Basis: Node `22.14.0`)
+- Backend: Java 21 und Quarkus `3.30.2`, wie in `tichu-backend/pom.xml`
 
-## React Compiler
+## Entwicklung
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Im Verzeichnis `tichu-frontend`:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+npm ci
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Wichtige Frontend-Befehle:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+npm run check
+npm run test
+npm run build
 ```
+
+`TICHU_API_PROXY_TARGET` kann in `.env` auf ein anderes Backend zeigen.
+`VITE_API_BASE_URL` setzt die API-Basis fuer den Browser. `VITE_PUBLIC_URL`
+ueberschreibt die oeffentliche Adresse fuer QR-Links; ohne diese Einstellung
+wird die aktuelle Browser-Adresse verwendet.
+
+Die wichtigsten Routen sind `/`, `/game/new`, `/game/spectate`,
+`/game/:id/spectate`, `/game/:id/score`, `/manage/players`,
+`/manage/teams` und `/statistics`. `/manage` leitet auf die Spielerverwaltung
+weiter.
+
+## Betrieb
+
+Aus dem Repository-Root wird das Image gebaut; es liefert die statischen Dateien
+ueber nginx aus:
+
+```text
+docker build -t tichu-frontend ./tichu-frontend
+docker run --rm -p 8081:80 tichu-frontend
+```
+
+Fuer einen abweichenden QR-Ursprung koennen beim Build
+`--build-arg TICHU_PUBLIC_URL=https://...` und
+`--build-arg TICHU_API_BASE_URL=/api` gesetzt werden. Die Docker-Basisimages
+sind auf konkrete Versionen und Multi-Architektur-Digests gepinnt.
+
+## Abdeckung
+
+Vitest prueft API-Payloads und Laufzeitvalidierung, Routing, Punkteingabe-Ablaeufe,
+Polling, Dialogfokus, responsive DOM-Strukturen und die deutsche Terminologie.
+Nicht durch jsdom ersetzt werden ein echter QR-Scan auf einem zweiten LAN-Gerät,
+reale Viewports (320/480 Pixel und Landscape) sowie ein manueller
+Screenreader-/axe-Durchlauf. Diese drei Prüfungen bleiben vor einem Release
+manuell erforderlich.

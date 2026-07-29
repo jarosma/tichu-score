@@ -139,6 +139,35 @@ describe("SubmitScore remote game state", () => {
 });
 
 describe("SubmitScore validation and short viewport structure", () => {
+  it("submits a valid round with a client-generated retry key", async () => {
+    mocks.fetchGame.mockResolvedValue(game());
+    mocks.submitScore.mockResolvedValue({
+      number: 0,
+      submittedAt: "2026-01-01T00:01:00Z",
+      team1: 5,
+      team2: 95,
+    });
+    renderScore();
+
+    await screen.findByRole("button", { name: "Runde speichern" });
+    fireEvent.click(screen.getByRole("button", { name: "5" }));
+    fireEvent.click(screen.getByRole("button", { name: "Runde speichern" }));
+
+    await waitFor(() => expect(mocks.submitScore).toHaveBeenCalledTimes(1));
+    expect(mocks.submitScore).toHaveBeenCalledWith(
+      "game-1",
+      expect.objectContaining({
+        roundKey: expect.any(String),
+        team1Score: 5,
+        team2Score: 95,
+        tichuCalls: [],
+      }),
+    );
+    expect(
+      await screen.findByText("Runde wurde gespeichert."),
+    ).toBeInTheDocument();
+  });
+
   // jsdom has no layout engine; manually verify 320px/480px heights and portrait/landscape.
   it("does not announce an error for an untouched 0:0 round", async () => {
     mocks.fetchGame.mockResolvedValue(game());
